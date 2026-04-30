@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @ObservedObject var microphoneService: MicrophoneService
+    @ObservedObject var launchAtLoginService: LaunchAtLoginService
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -49,6 +50,26 @@ struct MenuBarView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            Toggle("Launch at login", isOn: launchAtLoginBinding)
+
+            if launchAtLoginService.needsLoginItemsApproval {
+                Text("Allow this app in System Settings → General → Login Items.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Open Login Items settings") {
+                    launchAtLoginService.openLoginItemsSystemSettings()
+                }
+                .buttonStyle(.bordered)
+            }
+
+            if let launchError = launchAtLoginService.lastError {
+                Text(launchError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Divider()
 
             Button("Quit") {
@@ -58,6 +79,14 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(minWidth: 240, maxWidth: 240)
+        .onAppear { launchAtLoginService.refreshStatus() }
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLoginService.isLaunchAtLoginEnabled },
+            set: { launchAtLoginService.setLaunchAtLogin($0) }
+        )
     }
 
     private var volumePercent: Int {

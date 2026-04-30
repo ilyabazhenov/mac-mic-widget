@@ -17,6 +17,7 @@ struct MacMicWidgetApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let microphoneService = MicrophoneService()
+    private let launchAtLoginService = LaunchAtLoginService()
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private var cancellables = Set<AnyCancellable>()
@@ -28,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupPopover()
         bindStateUpdates()
         updateStatusButton()
+        launchAtLoginService.refreshStatus()
     }
 
     private func setupStatusItem() {
@@ -45,9 +47,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 260, height: 220)
+        popover.contentSize = NSSize(width: 260, height: 280)
         popover.contentViewController = NSHostingController(
-            rootView: MenuBarView(microphoneService: microphoneService)
+            rootView: MenuBarView(
+                microphoneService: microphoneService,
+                launchAtLoginService: launchAtLoginService
+            )
         )
     }
 
