@@ -9,16 +9,17 @@
 ## 2. Платформа и формат
 
 - Тип приложения: утилита в строке меню macOS
-- Целевая платформа: macOS 13+
+- Целевая платформа: macOS 14+ (variable SF Symbol `mic.and.signal.meter.fill` в status bar)
 - Модель запуска: фоновое приложение со status bar item и popover UI
 
 ## 3. Ключевые функциональные требования
 
 ### FR-1: Показывать текущий уровень микрофона в строке меню
 
-- В status bar item отображаются:
-  - иконка микрофона (`mic.fill` или `mic.slash.fill`)
-  - текущий input level в процентах (`0...100%`)
+- В status bar item отображается единая иконка:
+  - при mute: `mic.slash.and.signal.meter.fill` с `variableValue = 0` (fallback: `mic.and.signal.meter.fill`),
+  - при unmute: `mic.and.signal.meter.fill` с `variableValue`, отражающим нормализованный input level (`0...1`).
+- Точный процент (`0...100%`) доступен в tooltip status item и в popover.
 - Значение обновляется почти в реальном времени через периодический refresh (`0.5s`).
 
 ### FR-2: Быстро переключать микрофон on/off
@@ -49,18 +50,15 @@ Popover содержит:
 
 ## 4. Визуальные требования
 
-### VR-1: Цвет иконки по уровню
+### VR-1: Иконка в status bar
 
-Цвет иконки в status bar зависит от уровня:
-
-- muted -> secondary label color,
-- `< 30%` -> red,
-- `30...60%` -> yellow,
-- `> 60%` -> green.
+- Иконка в status bar отображается в template rendering.
+- Для muted-состояния применяется акцентный цвет (`systemRed`) для более заметной индикации выключенного микрофона.
+- Состояние и уровень показываются формой иконки (`mic.slash.and.signal.meter.fill` / `mic.and.signal.meter.fill`) и `variableValue`.
 
 ### VR-2: Стабильность layout в status bar и popover
 
-- Ширина текста в status bar достаточно зафиксирована, чтобы избежать заметных скачков при изменении процента.
+- Ширина status bar item стабильна: отображается одна иконка; меняется только `variableValue` (без текстового процента в строке меню).
 - Ширина кнопки mute/unmute в popover фиксирована (full-width), чтобы не было скачков между состояниями.
 
 ## 5. Поведение аудио I/O

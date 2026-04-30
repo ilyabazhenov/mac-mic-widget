@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "MacMicWidget",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v14),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-testing.git", from: "0.6.0"),

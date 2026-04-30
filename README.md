@@ -4,7 +4,7 @@
 
 ## Поведение
 
-- Текущий уровень входного микрофона отображается в процентах и на progress bar.
+- В строке меню — монохромная иконка с visual-индикатором уровня (SF Symbol); точный процент и progress bar — в popover (и процент в tooltip иконки).
 - Клик по иконке в строке меню переключает уровень микрофона между:
   - `0%` (микрофон выключен)
   - последним ненулевым значением (восстанавливается при следующем переключении)
@@ -12,9 +12,25 @@
 
 ## Требования
 
-- macOS 13+
+- macOS 14+
 - Xcode 15+ или Swift 6.3 toolchain
 - Аудиоустройство, у которого доступна запись в `kAudioDevicePropertyVolumeScalar` для input scope
+
+## Install / Download
+
+- Последний релиз: [GitHub Releases](https://github.com/ilyabazhenov/mac-mic-widget/releases/latest)
+- Для быстрой сборки release-артефакта локально:
+
+```bash
+scripts/release/package_release.sh v0.1.0
+```
+
+На первом этапе релизы распространяются как unsigned build. macOS может показать предупреждение Gatekeeper:
+
+1. Скачай и распакуй `MacMicWidget-<version>-macos-arm64-unsigned.zip`.
+2. Перетащи `MacMicWidget.app` в `Applications`.
+3. Открой `System Settings -> Privacy & Security`, найди блок про blocked app и нажми `Open Anyway`.
+4. Подтверди запуск в системном диалоге.
 
 ## Запуск
 

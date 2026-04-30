@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.target = self
         button.action = #selector(handleStatusItemClick)
         button.sendAction(on: [.leftMouseUp, .rightMouseDown])
-        button.imagePosition = .imageLeading
+        button.imagePosition = .imageOnly
         button.appearsDisabled = false
 
         statusItem = item
@@ -89,31 +89,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusButton() {
         guard let button = statusItem?.button else { return }
 
-        let symbolName = microphoneService.isMuted ? "mic.slash.fill" : "mic.fill"
-        let base = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Microphone") ?? NSImage()
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
-        let colorConfig = NSImage.SymbolConfiguration(paletteColors: [iconNSColor])
-        let image = (base.withSymbolConfiguration(sizeConfig.applying(colorConfig)) ?? base)
-        image.isTemplate = false
+        let level = microphoneService.isMuted ? 0.0 : min(1, max(0, Double(microphoneService.inputVolume)))
+        let base = statusSymbolImage(level: level)
+        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        let image = (base.withSymbolConfiguration(sizeConfig) ?? base)
+        image.isTemplate = true
 
         button.image = image
-        button.title = " \(formattedVolumePercent)"
-        button.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-        button.toolTip = "Left click: open panel. Right click: mute/unmute."
+        button.title = ""
+        button.imagePosition = .imageOnly
+        button.contentTintColor = microphoneService.isMuted ? .systemRed : nil
+        button.toolTip = statusItemToolTip
     }
 
     private var volumePercent: Int {
         Int((microphoneService.inputVolume * 100).rounded())
     }
 
-    private var formattedVolumePercent: String {
-        "\(volumePercent)%"
+    private var statusItemToolTip: String {
+        if microphoneService.isMuted {
+            return "Microphone muted — Left: open panel · Right: unmute"
+        }
+        return "Microphone \(volumePercent)% — Left: open panel · Right: mute/unmute"
     }
 
-    private var iconNSColor: NSColor {
-        if microphoneService.isMuted { return .secondaryLabelColor }
-        if volumePercent < 30 { return .systemRed }
-        if volumePercent <= 60 { return .systemYellow }
-        return .systemGreen
+    private func statusSymbolImage(level: Double) -> NSImage {
+        let symbolName = microphoneService.isMuted
+            ? "mic.slash.and.signal.meter.fill"
+            : "mic.and.signal.meter.fill"
+        let image = NSImage(
+            systemSymbolName: symbolName,
+            variableValue: level,
+            accessibilityDescription: "Microphone"
+        )
+        if let image {
+            return image
+        }
+
+        // Fallback for systems that may not have slash+meter symbol.
+        return NSImage(
+            systemSymbolName: "mic.and.signal.meter.fill",
+            variableValue: level,
+            accessibilityDescription: "Microphone"
+        ) ?? NSImage()
     }
+
 }
