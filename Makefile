@@ -1,4 +1,4 @@
-.PHONY: run dev test build clean deps
+.PHONY: run dev test coverage build clean deps
 
 APP := MacMicWidget
 SWIFT := swift
@@ -12,6 +12,9 @@ dev:
 
 test:
 	$(SWIFT) test
+
+coverage:
+	scripts/test/coverage.sh
 
 build:
 	$(SWIFT) build

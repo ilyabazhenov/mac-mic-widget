@@ -66,6 +66,18 @@ make dev
 make test
 ```
 
+Запуск с отчётом покрытия и проверкой минимального порога (по умолчанию `60%`):
+
+```bash
+make coverage
+```
+
+Кастомный порог:
+
+```bash
+COVERAGE_MIN=75 make coverage
+```
+
 ## Примечания и ограничения
 
 - Некоторые USB/Bluetooth-гарнитуры отдают input gain в нестандартном виде и могут не поддерживать запись через CoreAudio scalar property.

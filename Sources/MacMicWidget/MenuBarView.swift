@@ -1,6 +1,45 @@
 import SwiftUI
 import AppKit
 
+enum MicrophoneLevelLabel: String {
+    case muted = "Muted"
+    case low = "Low"
+    case medium = "Medium"
+    case high = "High"
+}
+
+enum MenuBarPresentationLogic {
+    static func volumePercent(from inputVolume: Float) -> Int {
+        Int((clamp(inputVolume) * 100).rounded())
+    }
+
+    static func levelLabel(isMuted: Bool, volumePercent: Int) -> MicrophoneLevelLabel {
+        if isMuted {
+            return .muted
+        }
+        if volumePercent < 30 {
+            return .low
+        }
+        if volumePercent <= 60 {
+            return .medium
+        }
+        return .high
+    }
+
+    static func levelColor(isMuted: Bool, volumePercent: Int) -> Color {
+        switch levelLabel(isMuted: isMuted, volumePercent: volumePercent) {
+        case .muted:
+            return .secondary
+        case .low:
+            return .red
+        case .medium:
+            return .yellow
+        case .high:
+            return .green
+        }
+    }
+}
+
 struct MenuBarView: View {
     @ObservedObject var microphoneService: MicrophoneService
     @ObservedObject var launchAtLoginService: LaunchAtLoginService
@@ -90,32 +129,20 @@ struct MenuBarView: View {
     }
 
     private var volumePercent: Int {
-        Int((microphoneService.inputVolume * 100).rounded())
+        MenuBarPresentationLogic.volumePercent(from: microphoneService.inputVolume)
     }
 
     private var levelColor: Color {
-        if microphoneService.isMuted {
-            return .secondary
-        }
-        if volumePercent < 30 {
-            return .red
-        }
-        if volumePercent <= 60 {
-            return .yellow
-        }
-        return .green
+        MenuBarPresentationLogic.levelColor(
+            isMuted: microphoneService.isMuted,
+            volumePercent: volumePercent
+        )
     }
 
     private var levelLabel: String {
-        if microphoneService.isMuted {
-            return "Muted"
-        }
-        if volumePercent < 30 {
-            return "Low"
-        }
-        if volumePercent <= 60 {
-            return "Medium"
-        }
-        return "High"
+        MenuBarPresentationLogic.levelLabel(
+            isMuted: microphoneService.isMuted,
+            volumePercent: volumePercent
+        ).rawValue
     }
 }

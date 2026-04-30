@@ -16,6 +16,12 @@ struct MacMicWidgetApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    enum StatusItemAction: Equatable {
+        case toggleMuteWithoutPopover
+        case togglePopover
+        case ignore
+    }
+
     private let microphoneService = MicrophoneService()
     private let launchAtLoginService = LaunchAtLoginService()
     private var statusItem: NSStatusItem?
@@ -70,17 +76,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleStatusItemClick() {
         guard let button = statusItem?.button else { return }
         guard let event = NSApp.currentEvent else { return }
-        let eventType = event.type
-        let isCtrlLeftClick = eventType == .leftMouseUp && event.modifierFlags.contains(.control)
+        let action = AppDelegate.classifyStatusItemAction(eventType: event.type, modifierFlags: event.modifierFlags)
 
-        if eventType == .rightMouseDown || isCtrlLeftClick {
+        if action == .toggleMuteWithoutPopover {
             popover.performClose(nil)
             microphoneService.toggleMute()
             updateStatusButton()
             return
         }
 
-        guard eventType == .leftMouseUp else {
+        guard action == .togglePopover else {
             return
         }
 
@@ -90,6 +95,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
+    }
+
+    static func classifyStatusItemAction(
+        eventType: NSEvent.EventType,
+        modifierFlags: NSEvent.ModifierFlags
+    ) -> StatusItemAction {
+        let isCtrlLeftClick = eventType == .leftMouseUp && modifierFlags.contains(.control)
+        if eventType == .rightMouseDown || isCtrlLeftClick {
+            return .toggleMuteWithoutPopover
+        }
+        if eventType == .leftMouseUp {
+            return .togglePopover
+        }
+        return .ignore
     }
 
     private func updateStatusButton() {
