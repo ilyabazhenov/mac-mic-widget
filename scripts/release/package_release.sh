@@ -11,6 +11,7 @@ DIST_DIR="$ROOT_DIR/dist/$VERSION"
 APP_DIR="$DIST_DIR/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
 ZIP_PATH="$DIST_DIR/$APP_NAME-$VERSION-macos-arm64-unsigned.zip"
 CHECKSUM_PATH="$DIST_DIR/SHA256SUMS.txt"
 
@@ -26,6 +27,10 @@ echo "==> Preparing app bundle"
 rm -rf "$DIST_DIR"
 mkdir -p "$MACOS_DIR"
 cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
+mkdir -p "$RESOURCES_DIR"
+if [[ -f "$ROOT_DIR/assets/AppIcon.icns" ]]; then
+  cp "$ROOT_DIR/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+fi
 
 cat > "$CONTENTS_DIR/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -42,6 +47,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
   <string>$BUNDLE_ID</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleName</key>
   <string>$APP_NAME</string>
   <key>CFBundlePackageType</key>
@@ -52,6 +59,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
   <string>${VERSION#v}</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
+  <key>LSUIElement</key>
+  <true/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
 </dict>
