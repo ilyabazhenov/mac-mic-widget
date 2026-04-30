@@ -43,6 +43,7 @@ enum MenuBarPresentationLogic {
 struct MenuBarView: View {
     @ObservedObject var microphoneService: MicrophoneService
     @ObservedObject var launchAtLoginService: LaunchAtLoginService
+    @ObservedObject var globalHotkeyService: GlobalHotkeyService
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -69,6 +70,40 @@ struct MenuBarView: View {
                 .tint(levelColor)
                 .frame(maxWidth: .infinity)
 
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Input level")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(volumePercent)%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Slider(
+                    value: inputVolumeBinding,
+                    in: 0...1
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("Input device")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("System default")
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+                Text(microphoneService.currentInputDeviceName)
+                    .font(.subheadline)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Button {
                 microphoneService.toggleMute()
             } label: {
@@ -90,6 +125,41 @@ struct MenuBarView: View {
             }
 
             Toggle("Launch at login", isOn: launchAtLoginBinding)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Enable global hotkey", isOn: globalHotkeyBinding)
+                HStack {
+                    Text("Shortcut")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(globalHotkeyService.hotkeyDisplay)
+                        .font(.caption.monospaced())
+                }
+                HStack {
+                    Button(globalHotkeyService.isRecording ? "Press keys..." : "Record shortcut") {
+                        if globalHotkeyService.isRecording {
+                            globalHotkeyService.cancelRecording()
+                        } else {
+                            globalHotkeyService.startRecording()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    Button("Reset to default") {
+                        globalHotkeyService.resetToDefault()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                Text(hotkeyStatusText)
+                    .font(.caption)
+                    .foregroundStyle(hotkeyStatusColor)
+                if let hotkeyError = globalHotkeyService.lastError {
+                    Text(hotkeyError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             if launchAtLoginService.needsLoginItemsApproval {
                 Text("Allow this app in System Settings → General → Login Items.")
@@ -128,6 +198,20 @@ struct MenuBarView: View {
         )
     }
 
+    private var globalHotkeyBinding: Binding<Bool> {
+        Binding(
+            get: { globalHotkeyService.isEnabled },
+            set: { globalHotkeyService.setEnabled($0) }
+        )
+    }
+
+    private var inputVolumeBinding: Binding<Double> {
+        Binding(
+            get: { Double(microphoneService.inputVolume) },
+            set: { microphoneService.setInputVolume(Float($0)) }
+        )
+    }
+
     private var volumePercent: Int {
         MenuBarPresentationLogic.volumePercent(from: microphoneService.inputVolume)
     }
@@ -144,5 +228,19 @@ struct MenuBarView: View {
             isMuted: microphoneService.isMuted,
             volumePercent: volumePercent
         ).rawValue
+    }
+
+    private var hotkeyStatusText: String {
+        if globalHotkeyService.isEnabled == false {
+            return "Hotkey disabled"
+        }
+        return globalHotkeyService.isHotkeyActive ? "Hotkey active" : "Hotkey unavailable (conflict)"
+    }
+
+    private var hotkeyStatusColor: Color {
+        if globalHotkeyService.isEnabled == false {
+            return .secondary
+        }
+        return globalHotkeyService.isHotkeyActive ? .secondary : .red
     }
 }

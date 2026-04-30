@@ -34,9 +34,11 @@ final class MockLoginItemRegistering: LoginItemRegistering, @unchecked Sendable 
 @MainActor
 final class MockMicrophoneBackend: MicrophoneBackend {
     var currentVolume: Float
+    var deviceName: String
 
-    init(currentVolume: Float) {
+    init(currentVolume: Float, deviceName: String = "Built-in Microphone") {
         self.currentVolume = currentVolume
+        self.deviceName = deviceName
     }
 
     func readInputVolume() throws -> Float {
@@ -45,6 +47,10 @@ final class MockMicrophoneBackend: MicrophoneBackend {
 
     func writeInputVolume(_ value: Float) throws {
         currentVolume = clamp(value)
+    }
+
+    func currentInputDeviceName() throws -> String {
+        deviceName
     }
 }
 
@@ -56,6 +62,7 @@ final class ThrowingMicrophoneBackend: MicrophoneBackend {
     }
 
     var readResult: Result<Float, Error>
+    var deviceNameResult: Result<String, Error> = .success("Built-in Microphone")
     var writeError: Error?
     private(set) var writeCalls: [Float] = []
 
@@ -72,6 +79,10 @@ final class ThrowingMicrophoneBackend: MicrophoneBackend {
         if let writeError {
             throw writeError
         }
+    }
+
+    func currentInputDeviceName() throws -> String {
+        try deviceNameResult.get()
     }
 }
 
@@ -98,6 +109,7 @@ final class MockSystemVolumeScripting: SystemVolumeScripting {
 
 final class MockCoreAudioController: CoreAudioControlling {
     var defaultDeviceID: AudioObjectID = 101
+    var deviceNameResult: String? = "Built-in Microphone"
     var readVolumesResult: [Float] = []
     var writeVolumeResult = false
 
@@ -107,6 +119,10 @@ final class MockCoreAudioController: CoreAudioControlling {
 
     func candidateInputElements(for deviceID: AudioObjectID) -> [AudioObjectPropertyElement] {
         [0, 1]
+    }
+
+    func inputDeviceName(for deviceID: AudioObjectID) throws -> String? {
+        deviceNameResult
     }
 
     func readVolumes(

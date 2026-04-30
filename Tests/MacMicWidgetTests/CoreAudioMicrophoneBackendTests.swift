@@ -81,3 +81,29 @@ func coreAudioBackendThrowsWhenCoreAudioWriteIsNotSettable() throws {
         #expect(Bool(false), "Unexpected error type: \(error)")
     }
 }
+
+@MainActor
+@Test
+func coreAudioBackendReturnsCurrentInputDeviceNameFromCoreAudio() throws {
+    let script = MockSystemVolumeScripting()
+    let coreAudio = MockCoreAudioController()
+    coreAudio.deviceNameResult = "AirPods Pro Microphone"
+    let backend = CoreAudioMicrophoneBackend(scripting: script, coreAudio: coreAudio)
+
+    let name = try backend.currentInputDeviceName()
+
+    #expect(name == "AirPods Pro Microphone")
+}
+
+@MainActor
+@Test
+func coreAudioBackendUsesUnknownNameFallbackWhenDeviceNameMissing() throws {
+    let script = MockSystemVolumeScripting()
+    let coreAudio = MockCoreAudioController()
+    coreAudio.deviceNameResult = "  "
+    let backend = CoreAudioMicrophoneBackend(scripting: script, coreAudio: coreAudio)
+
+    let name = try backend.currentInputDeviceName()
+
+    #expect(name == "Unknown input device")
+}

@@ -4,6 +4,7 @@ import Foundation
 protocol MicrophoneBackend {
     func readInputVolume() throws -> Float
     func writeInputVolume(_ value: Float) throws
+    func currentInputDeviceName() throws -> String
 }
 
 @MainActor
@@ -11,6 +12,7 @@ final class MicrophoneService: ObservableObject {
     @Published private(set) var inputVolume: Float = 0
     @Published private(set) var isMuted = true
     @Published private(set) var lastError: String?
+    @Published private(set) var currentInputDeviceName = "Unknown input device"
 
     private let backend: MicrophoneBackend
     private let pollInterval: TimeInterval
@@ -56,10 +58,21 @@ final class MicrophoneService: ObservableObject {
         }
     }
 
+    func setInputVolume(_ value: Float) {
+        do {
+            try backend.writeInputVolume(clamp(value))
+            lastError = nil
+            refreshVolume()
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
     func refreshVolume() {
         do {
             let volume = try backend.readInputVolume()
             applyObservedVolume(volume)
+            currentInputDeviceName = try backend.currentInputDeviceName()
             lastError = nil
         } catch {
             lastError = error.localizedDescription

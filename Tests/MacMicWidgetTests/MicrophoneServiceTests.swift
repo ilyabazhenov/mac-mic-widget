@@ -112,3 +112,27 @@ func applyObservedVolumeClampsAndTracksMutedState() {
     #expect(abs(service.inputVolume - 1) < 0.0001)
     #expect(!service.isMuted)
 }
+
+@MainActor
+@Test
+func refreshVolumeUpdatesCurrentInputDeviceName() {
+    let backend = MockMicrophoneBackend(currentVolume: 0.42, deviceName: "USB Podcast Mic")
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    service.refreshVolume()
+
+    #expect(service.currentInputDeviceName == "USB Podcast Mic")
+}
+
+@MainActor
+@Test
+func setInputVolumeWritesClampedValueToBackend() {
+    let backend = MockMicrophoneBackend(currentVolume: 0.42)
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    service.setInputVolume(1.8)
+    #expect(abs(backend.currentVolume - 1) < 0.0001)
+
+    service.setInputVolume(-0.4)
+    #expect(abs(backend.currentVolume - 0) < 0.0001)
+}

@@ -48,6 +48,7 @@ struct OsaScriptSystemVolumeScripting: SystemVolumeScripting {
 
 protocol CoreAudioControlling {
     func defaultInputDeviceID() throws -> AudioObjectID
+    func inputDeviceName(for deviceID: AudioObjectID) throws -> String?
     func candidateInputElements(for deviceID: AudioObjectID) -> [AudioObjectPropertyElement]
     func readVolumes(
         from deviceID: AudioObjectID,
@@ -122,6 +123,32 @@ struct SystemCoreAudioController: CoreAudioControlling {
             }
         }
         return result
+    }
+
+    func inputDeviceName(for deviceID: AudioObjectID) throws -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioObjectPropertyName,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        guard AudioObjectHasProperty(deviceID, &address) else {
+            return nil
+        }
+
+        var unmanagedName: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let status = AudioObjectGetPropertyData(
+            deviceID,
+            &address,
+            0,
+            nil,
+            &size,
+            &unmanagedName
+        )
+        guard status == noErr else {
+            throw MicrophoneError.coreAudioFailure(status)
+        }
+        return unmanagedName?.takeRetainedValue() as String?
     }
 
     func writeVolume(
@@ -257,6 +284,15 @@ struct CoreAudioMicrophoneBackend: MicrophoneBackend {
         guard wroteAtLeastOne else {
             throw MicrophoneError.volumePropertyNotSettable
         }
+    }
+
+    func currentInputDeviceName() throws -> String {
+        let deviceID = try coreAudio.defaultInputDeviceID()
+        if let name = try coreAudio.inputDeviceName(for: deviceID)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           name.isEmpty == false {
+            return name
+        }
+        return "Unknown input device"
     }
 }
 
