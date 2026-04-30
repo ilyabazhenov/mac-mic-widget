@@ -3,9 +3,15 @@ set -euo pipefail
 
 APP_NAME="MacMicWidget"
 BUNDLE_ID="com.ilyabazhenov.mac-mic-widget"
-VERSION="${1:-v0.1.0}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+VERSION_FILE="$ROOT_DIR/VERSION"
+DEFAULT_VERSION="$(tr -d '[:space:]' < "$VERSION_FILE" 2>/dev/null || true)"
+VERSION="${1:-$DEFAULT_VERSION}"
+if [[ -z "$VERSION" ]]; then
+  echo "ERROR: version is empty. Provide it as an argument or set it in $VERSION_FILE"
+  exit 1
+fi
 BUILD_DIR="$ROOT_DIR/.build/arm64-apple-macosx/release"
 DIST_DIR="$ROOT_DIR/dist/$VERSION"
 APP_DIR="$DIST_DIR/$APP_NAME.app"

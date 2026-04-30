@@ -22,7 +22,13 @@
 - Для быстрой сборки release-артефакта локально:
 
 ```bash
-scripts/release/package_release.sh v0.1.0
+scripts/release/package_release.sh
+```
+
+Скрипт берёт версию из файла `VERSION`. При необходимости можно передать явный override:
+
+```bash
+scripts/release/package_release.sh v0.1.3
 ```
 
 На первом этапе релизы распространяются как unsigned build. macOS может показать предупреждение Gatekeeper:
