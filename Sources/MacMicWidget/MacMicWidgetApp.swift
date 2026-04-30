@@ -4,7 +4,7 @@ import AppKit
 import Combine
 
 @main
-struct MicWidgetApp: App {
+struct MacMicWidgetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {

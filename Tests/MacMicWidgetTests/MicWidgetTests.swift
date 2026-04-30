@@ -1,5 +1,5 @@
 import Testing
-@testable import MicWidget
+@testable import MacMicWidget
 
 @MainActor
 final class MockMicrophoneBackend: MicrophoneBackend {

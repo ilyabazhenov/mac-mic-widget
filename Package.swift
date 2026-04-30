@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MicWidget",
+    name: "MacMicWidget",
     platforms: [
         .macOS(.v13),
     ],
@@ -13,12 +13,12 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "MicWidget"
+            name: "MacMicWidget"
         ),
         .testTarget(
-            name: "MicWidgetTests",
+            name: "MacMicWidgetTests",
             dependencies: [
-                "MicWidget",
+                "MacMicWidget",
                 .product(name: "Testing", package: "swift-testing"),
             ]
         ),

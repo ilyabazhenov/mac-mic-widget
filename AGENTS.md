@@ -4,7 +4,7 @@
 
 ## Обзор проекта
 
-- Проект: `MicWidget`
+- Проект: `mac-mic-widget` (`Mac Mic Widget`)
 - Тип: утилита микрофона в строке меню macOS
 - Язык: Swift
 - UI-стек: AppKit (`NSStatusItem` + `NSPopover`) + SwiftUI-контент поповера
@@ -15,9 +15,9 @@
 Перед внесением изменений в функциональность обязательно прочитать:
 
 1. `docs/PRODUCT_REQUIREMENTS.md` - реализованное поведение продукта и ограничения.
-2. `Sources/MicWidget/MicWidgetApp.swift` - модель взаимодействия со status item.
-3. `Sources/MicWidget/Services/MicrophoneService.swift` - логика чтения/записи уровня и toggle.
-4. `Sources/MicWidget/MenuBarView.swift` - поведение UI поповера.
+2. `Sources/MacMicWidget/MacMicWidgetApp.swift` - модель взаимодействия со status item.
+3. `Sources/MacMicWidget/Services/MicrophoneService.swift` - логика чтения/записи уровня и toggle.
+4. `Sources/MacMicWidget/MenuBarView.swift` - поведение UI поповера.
 
 ## Контракт взаимодействия (не ломать)
 

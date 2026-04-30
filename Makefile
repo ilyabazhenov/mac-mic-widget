@@ -1,6 +1,6 @@
 .PHONY: run dev test build clean deps
 
-APP := MicWidget
+APP := MacMicWidget
 SWIFT := swift
 
 run:
