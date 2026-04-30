@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 300, height: 430)
+        popover.contentSize = NSSize(width: 320, height: 470)
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView(
                 microphoneService: microphoneService,

@@ -46,16 +46,20 @@ struct MenuBarView: View {
     @ObservedObject var globalHotkeyService: GlobalHotkeyService
     @State private var sliderVolume: Double = 0
     @State private var isSliderEditing = false
+    private let sectionSpacing: CGFloat = 16
+    private let contentSpacing: CGFloat = 8
+    private let compactSpacing: CGFloat = 4
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: compactSpacing) {
                     Text("Microphone")
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(volumePercent)%")
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
                         .monospacedDigit()
                 }
                 Spacer()
@@ -68,14 +72,14 @@ struct MenuBarView: View {
                     .clipShape(Capsule())
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: contentSpacing) {
                 HStack {
                     Text("Input level")
-                        .font(.caption)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
                     Text("\(volumePercent)%")
-                        .font(.caption.monospacedDigit())
+                        .font(.subheadline.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 Slider(
@@ -85,13 +89,13 @@ struct MenuBarView: View {
                 )
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: compactSpacing) {
+                HStack(alignment: .firstTextBaseline, spacing: contentSpacing) {
                     Text("Input device")
-                        .font(.caption)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Text("System default")
-                        .font(.caption2.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Color.secondary.opacity(0.14))
@@ -99,6 +103,7 @@ struct MenuBarView: View {
                 }
                 Text(microphoneService.currentInputDeviceName)
                     .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -107,12 +112,13 @@ struct MenuBarView: View {
                 microphoneService.toggleMute()
             } label: {
                 Label(
-                    microphoneService.isMuted ? "Unmute microphone" : "Mute microphone",
+                    microphoneService.isMuted ? "Unmute" : "Mute",
                     systemImage: microphoneService.isMuted ? "mic.fill" : "mic.slash.fill"
                 )
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .tint(microphoneService.isMuted ? .accentColor : .red)
             .frame(maxWidth: .infinity)
             .keyboardShortcut(.space, modifiers: [])
 
@@ -125,17 +131,18 @@ struct MenuBarView: View {
 
             Toggle("Launch at login", isOn: launchAtLoginBinding)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: contentSpacing) {
                 Toggle("Enable global hotkey", isOn: globalHotkeyBinding)
                 HStack {
                     Text("Shortcut")
-                        .font(.caption)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
                     Text(globalHotkeyService.hotkeyDisplay)
-                        .font(.caption.monospaced())
+                        .font(.subheadline.monospaced())
+                        .foregroundStyle(.secondary)
                 }
-                HStack {
+                HStack(spacing: contentSpacing) {
                     Button(globalHotkeyService.isRecording ? "Press keys..." : "Record shortcut") {
                         if globalHotkeyService.isRecording {
                             globalHotkeyService.cancelRecording()
@@ -144,11 +151,16 @@ struct MenuBarView: View {
                         }
                     }
                     .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .controlSize(.regular)
                     Button("Reset to default") {
                         globalHotkeyService.resetToDefault()
                     }
                     .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .controlSize(.regular)
                 }
+                .frame(maxWidth: .infinity)
                 Text(hotkeyStatusText)
                     .font(.caption)
                     .foregroundStyle(hotkeyStatusColor)
@@ -186,7 +198,7 @@ struct MenuBarView: View {
             .buttonStyle(.bordered)
         }
         .padding(14)
-        .frame(minWidth: 240, maxWidth: 240)
+        .frame(minWidth: 280, maxWidth: 280)
         .onAppear {
             sliderVolume = Double(microphoneService.inputVolume)
             launchAtLoginService.refreshStatus()
