@@ -136,3 +136,70 @@ func setInputVolumeWritesClampedValueToBackend() {
     service.setInputVolume(-0.4)
     #expect(abs(backend.currentVolume - 0) < 0.0001)
 }
+
+// Slider commit contract:
+// - setInputVolume applies value optimistically for immediate UI feedback.
+// - refreshVolume suppresses transient backend reads that would bounce slider position.
+// - final converged backend value is still accepted after the settle window.
+@MainActor
+@Test
+func setInputVolumeSuppressesTransientObservedValuesAfterWrite() {
+    let backend = SequencedReadMicrophoneBackend(
+        readVolumes: [0.25, 0.4, 0.61],
+        fallbackReadVolume: 0.61
+    )
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    service.setInputVolume(0.6)
+    #expect(abs(service.inputVolume - 0.6) < 0.0001)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0.6) < 0.0001)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0.6) < 0.0001)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0.61) < 0.0001)
+}
+
+@MainActor
+@Test
+func setInputVolumeAppliesOptimisticValueImmediately() {
+    let backend = SequencedReadMicrophoneBackend(
+        readVolumes: [0.2],
+        fallbackReadVolume: 0.2
+    )
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    service.setInputVolume(0.73)
+
+    #expect(abs(service.inputVolume - 0.73) < 0.0001)
+    #expect(service.isMuted == false)
+}
+
+@MainActor
+@Test
+func setInputVolumeToZeroDoesNotBounceBackOnTransientReads() {
+    let backend = SequencedReadMicrophoneBackend(
+        readVolumes: [0.8, 0.62, 0.0],
+        fallbackReadVolume: 0.0
+    )
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    service.setInputVolume(0)
+    #expect(abs(service.inputVolume - 0) < 0.0001)
+    #expect(service.isMuted)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0) < 0.0001)
+    #expect(service.isMuted)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0) < 0.0001)
+    #expect(service.isMuted)
+
+    service.refreshVolume()
+    #expect(abs(service.inputVolume - 0) < 0.0001)
+    #expect(service.isMuted)
+}

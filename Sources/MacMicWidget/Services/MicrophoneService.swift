@@ -18,6 +18,10 @@ final class MicrophoneService: ObservableObject {
     private let pollInterval: TimeInterval
     private var timer: Timer?
     private(set) var lastNonZeroInputVolume: Float = 1
+    private var pendingUserVolume: Float?
+    private var pendingUserVolumeDeadline = Date.distantPast
+    private let pendingUserVolumeTolerance: Float = 0.015
+    private let pendingUserVolumeSettleInterval: TimeInterval = 0.6
 
     init(backend: MicrophoneBackend = CoreAudioMicrophoneBackend(), pollInterval: TimeInterval = 0.5) {
         self.backend = backend
@@ -43,6 +47,7 @@ final class MicrophoneService: ObservableObject {
 
     func toggleMute() {
         do {
+            clearPendingUserVolume()
             let current = try backend.readInputVolume()
             if current > 0.0001 {
                 lastNonZeroInputVolume = current
@@ -60,10 +65,14 @@ final class MicrophoneService: ObservableObject {
 
     func setInputVolume(_ value: Float) {
         do {
-            try backend.writeInputVolume(clamp(value))
+            let targetVolume = clamp(value)
+            try backend.writeInputVolume(targetVolume)
+            pendingUserVolume = targetVolume
+            pendingUserVolumeDeadline = Date().addingTimeInterval(pendingUserVolumeSettleInterval)
+            applyObservedVolume(targetVolume)
             lastError = nil
-            refreshVolume()
         } catch {
+            clearPendingUserVolume()
             lastError = error.localizedDescription
         }
     }
@@ -71,7 +80,9 @@ final class MicrophoneService: ObservableObject {
     func refreshVolume() {
         do {
             let volume = try backend.readInputVolume()
-            applyObservedVolume(volume)
+            if shouldApplyObservedVolume(volume) {
+                applyObservedVolume(volume)
+            }
             currentInputDeviceName = try backend.currentInputDeviceName()
             lastError = nil
         } catch {
@@ -85,6 +96,26 @@ final class MicrophoneService: ObservableObject {
         if inputVolume > 0.0001 {
             lastNonZeroInputVolume = inputVolume
         }
+    }
+
+    private func shouldApplyObservedVolume(_ volume: Float) -> Bool {
+        guard let pendingUserVolume else {
+            return true
+        }
+
+        let observedVolume = clamp(volume)
+        let withinTolerance = abs(observedVolume - pendingUserVolume) <= pendingUserVolumeTolerance
+        if withinTolerance || Date() >= pendingUserVolumeDeadline {
+            clearPendingUserVolume()
+            return true
+        }
+
+        return false
+    }
+
+    private func clearPendingUserVolume() {
+        pendingUserVolume = nil
+        pendingUserVolumeDeadline = Date.distantPast
     }
 }
 

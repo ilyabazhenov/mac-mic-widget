@@ -86,6 +86,35 @@ final class ThrowingMicrophoneBackend: MicrophoneBackend {
     }
 }
 
+@MainActor
+final class SequencedReadMicrophoneBackend: MicrophoneBackend {
+    var readVolumes: [Float]
+    var fallbackReadVolume: Float
+    var deviceName: String
+    private(set) var writeCalls: [Float] = []
+
+    init(readVolumes: [Float], fallbackReadVolume: Float = 0, deviceName: String = "Built-in Microphone") {
+        self.readVolumes = readVolumes
+        self.fallbackReadVolume = fallbackReadVolume
+        self.deviceName = deviceName
+    }
+
+    func readInputVolume() throws -> Float {
+        if readVolumes.isEmpty {
+            return fallbackReadVolume
+        }
+        return readVolumes.removeFirst()
+    }
+
+    func writeInputVolume(_ value: Float) throws {
+        writeCalls.append(clamp(value))
+    }
+
+    func currentInputDeviceName() throws -> String {
+        deviceName
+    }
+}
+
 final class MockSystemVolumeScripting: SystemVolumeScripting {
     var readResult: Result<Float?, Error>
     var writeResult: Result<Bool, Error>

@@ -44,6 +44,8 @@ struct MenuBarView: View {
     @ObservedObject var microphoneService: MicrophoneService
     @ObservedObject var launchAtLoginService: LaunchAtLoginService
     @ObservedObject var globalHotkeyService: GlobalHotkeyService
+    @State private var sliderVolume: Double = 0
+    @State private var isSliderEditing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -66,10 +68,6 @@ struct MenuBarView: View {
                     .clipShape(Capsule())
             }
 
-            ProgressView(value: Double(microphoneService.inputVolume))
-                .tint(levelColor)
-                .frame(maxWidth: .infinity)
-
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Input level")
@@ -81,8 +79,9 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                 }
                 Slider(
-                    value: inputVolumeBinding,
-                    in: 0...1
+                    value: sliderBinding,
+                    in: 0...1,
+                    onEditingChanged: handleSliderEditingChanged
                 )
             }
 
@@ -188,7 +187,15 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(minWidth: 240, maxWidth: 240)
-        .onAppear { launchAtLoginService.refreshStatus() }
+        .onAppear {
+            sliderVolume = Double(microphoneService.inputVolume)
+            launchAtLoginService.refreshStatus()
+        }
+        .onChange(of: microphoneService.inputVolume) { _, newValue in
+            if isSliderEditing == false {
+                sliderVolume = Double(newValue)
+            }
+        }
     }
 
     private var launchAtLoginBinding: Binding<Bool> {
@@ -205,11 +212,29 @@ struct MenuBarView: View {
         )
     }
 
-    private var inputVolumeBinding: Binding<Double> {
+    private var sliderBinding: Binding<Double> {
         Binding(
-            get: { Double(microphoneService.inputVolume) },
-            set: { microphoneService.setInputVolume(Float($0)) }
+            get: {
+                if isSliderEditing {
+                    return sliderVolume
+                }
+                return Double(microphoneService.inputVolume)
+            },
+            set: { sliderVolume = $0 }
         )
+    }
+
+    private func handleSliderEditingChanged(_ isEditing: Bool) {
+        if isEditing {
+            isSliderEditing = true
+            return
+        }
+
+        let committedVolume = sliderVolume
+        // Keep local mode during commit to avoid one-frame snap to stale service value.
+        microphoneService.setInputVolume(Float(committedVolume))
+        sliderVolume = committedVolume
+        isSliderEditing = false
     }
 
     private var volumePercent: Int {
