@@ -98,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.image = image
         button.title = ""
         button.imagePosition = .imageOnly
-        button.contentTintColor = microphoneService.isMuted ? .systemRed : nil
+        button.contentTintColor = nil
         button.toolTip = statusItemToolTip
     }
 
