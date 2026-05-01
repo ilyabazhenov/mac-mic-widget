@@ -1,0 +1,37 @@
+name: tests-and-coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  tests-and-coverage:
+    name: tests-and-coverage
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.3"
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Validate coverage threshold
+        env:
+          COVERAGE_MIN: "15"
+        run: make coverage
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
