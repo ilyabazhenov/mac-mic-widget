@@ -51,7 +51,7 @@ xcrun llvm-cov report \
   -object "$APP_BINARY" \
   -ignore-filename-regex "$IGNORE_REGEX" > coverage/coverage-report.txt
 
-TOTAL_LINE="$(rg '^TOTAL' coverage/coverage-report.txt)"
+TOTAL_LINE="$(awk '/^TOTAL/ { print; exit }' coverage/coverage-report.txt)"
 TOTAL_PERCENT="$(echo "$TOTAL_LINE" | awk '{print $10}' | tr -d '%')"
 
 if [[ -z "$TOTAL_PERCENT" ]]; then
