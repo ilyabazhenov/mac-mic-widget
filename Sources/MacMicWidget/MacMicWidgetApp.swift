@@ -22,15 +22,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case ignore
     }
 
+    enum HUDDisplayMode {
+        case transient
+        case persistent
+    }
+
     private let microphoneService = MicrophoneService()
     private let launchAtLoginService = LaunchAtLoginService()
     private let visualFeedbackService = VisualFeedbackService()
     private let localizationService = LocalizationService()
+    private let holdToUnmuteService = HoldToUnmuteService()
     private lazy var floatingHUDController = FloatingHUDController(localizationService: localizationService)
     private let audioFeedbackService = AudioFeedbackService()
-    private lazy var globalHotkeyService = GlobalHotkeyService { [weak self] in
-        self?.handleExternalToggle(source: .globalHotkey)
-    }
+    private lazy var globalHotkeyService = GlobalHotkeyService(
+        toggleHandler: { },
+        eventHandler: { [weak self] event in
+            self?.handleGlobalHotkeyEvent(event)
+        }
+    )
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private var cancellables = Set<AnyCancellable>()
@@ -78,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 visualFeedbackService: visualFeedbackService,
                 localizationService: localizationService,
                 audioFeedbackService: audioFeedbackService,
+                holdToUnmuteService: holdToUnmuteService,
                 onToggleMuteFromPopover: { [weak self] in
                     self?.toggleMuteFromPopover()
                 },
@@ -138,16 +148,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleExternalToggle(source: MicrophoneChangeSource) {
         let didToggle = microphoneService.toggleMute()
+        handleDidToggle(didToggle, source: source, hudDisplayMode: .transient)
+    }
+
+    private func handleDidToggle(
+        _ didToggle: Bool,
+        source: MicrophoneChangeSource,
+        hudDisplayMode: HUDDisplayMode
+    ) {
         updateStatusButton()
-        guard didToggle else {
+        guard didToggle else { return }
+        let state = makeFeedbackState(source: source)
+        if visualFeedbackService.isEnabled {
+            switch hudDisplayMode {
+            case .transient:
+                floatingHUDController.show(state: state)
+            case .persistent:
+                floatingHUDController.showPersistent(state: state)
+            }
+        }
+        audioFeedbackService.play(for: state)
+    }
+
+    private func handleGlobalHotkeyEvent(_ event: GlobalHotkeyEvent) {
+        if holdToUnmuteService.isEnabled == false && holdToUnmuteService.isHoldingFromMuted == false {
+            guard event == .pressed else { return }
+            handleExternalToggle(source: .globalHotkey)
             return
         }
 
-        let state = makeFeedbackState(source: source)
-        if visualFeedbackService.isEnabled {
-            floatingHUDController.show(state: state)
+        let didToggle: Bool
+        let hudDisplayMode: HUDDisplayMode
+        switch event {
+        case .pressed:
+            didToggle = holdToUnmuteService.handleHotkeyPressed(microphone: microphoneService)
+            hudDisplayMode = .persistent
+        case .released:
+            didToggle = holdToUnmuteService.handleHotkeyReleased(microphone: microphoneService)
+            hudDisplayMode = .transient
+            if didToggle == false {
+                floatingHUDController.hide()
+            }
         }
-        audioFeedbackService.play(for: state)
+        handleDidToggle(didToggle, source: .globalHotkey, hudDisplayMode: hudDisplayMode)
     }
 
     private func toggleMuteFromPopover() {

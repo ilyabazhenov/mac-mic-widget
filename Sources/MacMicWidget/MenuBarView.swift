@@ -74,6 +74,7 @@ struct MenuBarView: View {
     @ObservedObject var visualFeedbackService: VisualFeedbackService
     @ObservedObject var localizationService: LocalizationService
     @ObservedObject var audioFeedbackService: AudioFeedbackService
+    @ObservedObject var holdToUnmuteService: HoldToUnmuteService
     let onToggleMuteFromPopover: () -> Void
     let onSetInputVolumeFromPopover: (Float) -> Void
     let onTabChanged: (MenuBarTab) -> Void
@@ -132,6 +133,13 @@ struct MenuBarView: View {
         Binding(
             get: { globalHotkeyService.isEnabled },
             set: { globalHotkeyService.setEnabled($0) }
+        )
+    }
+
+    private var holdToUnmuteBinding: Binding<Bool> {
+        Binding(
+            get: { holdToUnmuteService.isEnabled },
+            set: { holdToUnmuteService.setEnabled($0) }
         )
     }
 
@@ -324,6 +332,8 @@ struct MenuBarView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Toggle(localizationService.string("menu.enable_global_hotkey"), isOn: globalHotkeyBinding)
+                Toggle(localizationService.string("menu.enable_hold_to_unmute"), isOn: holdToUnmuteBinding)
+                    .disabled(globalHotkeyService.isEnabled == false)
                 HStack {
                     Text(localizationService.string("menu.shortcut"))
                         .font(.subheadline.weight(.medium))

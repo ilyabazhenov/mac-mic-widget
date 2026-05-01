@@ -5,19 +5,20 @@
 "menu.tab_selector" = "Раздел";
 "menu.tab_microphone" = "Микрофон";
 "menu.tab_settings" = "Настройки";
-"menu.launch_at_login" = "Запускать при входе";
-"menu.enable_global_hotkey" = "Включить глобальный хоткей";
+"menu.launch_at_login" = "Запуск при входе";
+"menu.enable_global_hotkey" = "Глобальный хоткей";
+"menu.enable_hold_to_unmute" = "Удерживать для включения";
 "menu.hotkey_section" = "Хоткей";
 "menu.shortcut" = "Сочетание";
 "menu.record_shortcut" = "Записать хоткей";
 "menu.press_keys" = "Нажмите клавиши...";
 "menu.reset_default" = "Сбросить по умолчанию";
 "menu.feedback_section" = "Уведомления";
-"menu.show_visual_notifications" = "Показывать визуальные уведомления";
-"menu.play_sound_notifications" = "Проигрывать звуковые уведомления";
+"menu.show_visual_notifications" = "Визуальные уведомления";
+"menu.play_sound_notifications" = "Звуковые уведомления";
 "menu.sound_volume" = "Громкость уведомлений";
 "menu.language_section" = "Язык";
-"menu.open_login_items" = "Открыть настройки элементов входа";
+"menu.open_login_items" = "Открыть объекты входа";
 "menu.allow_login_items" = "Разрешите это приложение в Системные настройки → Основные → Объекты входа.";
 "menu.quit" = "Выйти";
 

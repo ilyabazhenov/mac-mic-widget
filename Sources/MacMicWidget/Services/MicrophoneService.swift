@@ -48,15 +48,50 @@ final class MicrophoneService: ObservableObject {
     @discardableResult
     func toggleMute() -> Bool {
         do {
-            clearPendingUserVolume()
             let current = try backend.readInputVolume()
             if current > 0.0001 {
-                lastNonZeroInputVolume = current
-                try backend.writeInputVolume(0)
-            } else {
-                let restoreValue = max(lastNonZeroInputVolume, 0.05)
-                try backend.writeInputVolume(restoreValue)
+                return muteIfNeeded()
             }
+            return unmuteToLastLevelIfNeeded()
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+    }
+
+    @discardableResult
+    func muteIfNeeded() -> Bool {
+        do {
+            clearPendingUserVolume()
+            let current = try backend.readInputVolume()
+            guard current > 0.0001 else {
+                refreshVolume()
+                lastError = nil
+                return false
+            }
+            lastNonZeroInputVolume = current
+            try backend.writeInputVolume(0)
+            lastError = nil
+            refreshVolume()
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+    }
+
+    @discardableResult
+    func unmuteToLastLevelIfNeeded() -> Bool {
+        do {
+            clearPendingUserVolume()
+            let current = try backend.readInputVolume()
+            guard current <= 0.0001 else {
+                refreshVolume()
+                lastError = nil
+                return false
+            }
+            let restoreValue = max(lastNonZeroInputVolume, 0.05)
+            try backend.writeInputVolume(restoreValue)
             lastError = nil
             refreshVolume()
             return true

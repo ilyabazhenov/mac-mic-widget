@@ -16,6 +16,23 @@ final class FloatingHUDController {
     }
 
     func show(state: MicrophoneFeedbackState) {
+        present(state: state)
+        restartHideTimer()
+    }
+
+    func showPersistent(state: MicrophoneFeedbackState) {
+        present(state: state)
+        hideTimer?.invalidate()
+        hideTimer = nil
+    }
+
+    func hide() {
+        hideTimer?.invalidate()
+        hideTimer = nil
+        panel?.orderOut(nil)
+    }
+
+    private func present(state: MicrophoneFeedbackState) {
         let panel = makePanelIfNeeded(with: state)
         if let hostingController {
             hostingController.rootView = FloatingHUDView(state: state, localizationService: localizationService)
@@ -25,7 +42,6 @@ final class FloatingHUDController {
         panel.contentView?.layoutSubtreeIfNeeded()
         position(panel: panel)
         panel.orderFrontRegardless()
-        restartHideTimer()
     }
 
     private func makePanelIfNeeded(with state: MicrophoneFeedbackState) -> NSPanel {

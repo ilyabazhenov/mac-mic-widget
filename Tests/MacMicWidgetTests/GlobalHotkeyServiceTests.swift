@@ -20,3 +20,10 @@ func globalHotkeyDisplayStringUsesReadableSymbols() {
     )
     #expect(GlobalHotkeyService.displayString(for: configuration) == "⌃⌥⌘M")
 }
+
+@Test
+func globalHotkeyMapsCarbonEventKinds() {
+    #expect(GlobalHotkeyService.mapHotkeyEvent(kind: UInt32(kEventHotKeyPressed)) == .pressed)
+    #expect(GlobalHotkeyService.mapHotkeyEvent(kind: UInt32(kEventHotKeyReleased)) == .released)
+    #expect(GlobalHotkeyService.mapHotkeyEvent(kind: 9999) == nil)
+}

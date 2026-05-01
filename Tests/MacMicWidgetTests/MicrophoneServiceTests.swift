@@ -203,3 +203,31 @@ func setInputVolumeToZeroDoesNotBounceBackOnTransientReads() {
     #expect(abs(service.inputVolume - 0) < 0.0001)
     #expect(service.isMuted)
 }
+
+@MainActor
+@Test
+func muteIfNeededReturnsFalseWhenAlreadyMuted() {
+    let backend = MockMicrophoneBackend(currentVolume: 0)
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+
+    let didMute = service.muteIfNeeded()
+
+    #expect(didMute == false)
+    #expect(service.isMuted)
+}
+
+@MainActor
+@Test
+func unmuteToLastLevelIfNeededUsesMinimumFivePercent() {
+    let backend = MockMicrophoneBackend(currentVolume: 0.01)
+    let service = MicrophoneService(backend: backend, pollInterval: 999)
+    service.refreshVolume()
+    _ = service.muteIfNeeded()
+    backend.currentVolume = 0
+    service.refreshVolume()
+
+    let didUnmute = service.unmuteToLastLevelIfNeeded()
+
+    #expect(didUnmute)
+    #expect(abs(backend.currentVolume - 0.05) < 0.0001)
+}

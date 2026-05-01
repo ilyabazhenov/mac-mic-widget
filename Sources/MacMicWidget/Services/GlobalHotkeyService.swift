@@ -12,6 +12,11 @@ struct HotkeyConfiguration: Codable, Equatable {
     )
 }
 
+enum GlobalHotkeyEvent: Equatable {
+    case pressed
+    case released
+}
+
 final class GlobalHotkeyService: ObservableObject {
     @Published private(set) var isEnabled: Bool
     @Published private(set) var isHotkeyActive = false
@@ -21,6 +26,7 @@ final class GlobalHotkeyService: ObservableObject {
 
     private let defaults: UserDefaults
     private let toggleHandler: () -> Void
+    private let eventHandler: ((GlobalHotkeyEvent) -> Void)?
     private var configuration: HotkeyConfiguration
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
@@ -30,9 +36,14 @@ final class GlobalHotkeyService: ObservableObject {
     private static let enabledKey = "globalHotkey.enabled"
     private static let configurationKey = "globalHotkey.configuration"
 
-    init(defaults: UserDefaults = .standard, toggleHandler: @escaping () -> Void) {
+    init(
+        defaults: UserDefaults = .standard,
+        toggleHandler: @escaping () -> Void,
+        eventHandler: ((GlobalHotkeyEvent) -> Void)? = nil
+    ) {
         self.defaults = defaults
         self.toggleHandler = toggleHandler
+        self.eventHandler = eventHandler
         self.isEnabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? false
         if
             let data = defaults.data(forKey: Self.configurationKey),
@@ -173,20 +184,26 @@ final class GlobalHotkeyService: ObservableObject {
     private func installEventHandlerIfNeeded() {
         guard eventHandlerRef == nil else { return }
 
-        var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        var eventTypes: [EventTypeSpec] = [
+            EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+            EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
+        ]
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
-        InstallEventHandler(
-            GetApplicationEventTarget(),
-            { _, event, userData in
-                guard let userData else { return noErr }
-                let service = Unmanaged<GlobalHotkeyService>.fromOpaque(userData).takeUnretainedValue()
-                return service.handleCarbonEvent(event)
-            },
-            1,
-            &eventType,
-            selfPointer,
-            &eventHandlerRef
-        )
+        eventTypes.withUnsafeMutableBufferPointer { buffer in
+            guard let baseAddress = buffer.baseAddress else { return }
+            InstallEventHandler(
+                GetApplicationEventTarget(),
+                { _, event, userData in
+                    guard let userData else { return noErr }
+                    let service = Unmanaged<GlobalHotkeyService>.fromOpaque(userData).takeUnretainedValue()
+                    return service.handleCarbonEvent(event)
+                },
+                buffer.count,
+                baseAddress,
+                selfPointer,
+                &eventHandlerRef
+            )
+        }
     }
 
     private func uninstallEventHandler() {
@@ -197,6 +214,9 @@ final class GlobalHotkeyService: ObservableObject {
     }
 
     private func handleCarbonEvent(_ event: EventRef?) -> OSStatus {
+        guard let event else {
+            return noErr
+        }
         var hotKeyID = EventHotKeyID()
         let status = GetEventParameter(
             event,
@@ -213,7 +233,15 @@ final class GlobalHotkeyService: ObservableObject {
         guard hotKeyID.signature == self.hotkeyID.signature, hotKeyID.id == self.hotkeyID.id else {
             return noErr
         }
-        toggleHandler()
+        guard let mappedEvent = Self.mapHotkeyEvent(kind: GetEventKind(event)) else {
+            return noErr
+        }
+
+        if let eventHandler {
+            eventHandler(mappedEvent)
+        } else if mappedEvent == .pressed {
+            toggleHandler()
+        }
         return noErr
     }
 
@@ -240,6 +268,16 @@ final class GlobalHotkeyService: ObservableObject {
         if configuration.modifiers & UInt32(shiftKey) != 0 { prefix += "⇧" }
         if configuration.modifiers & UInt32(cmdKey) != 0 { prefix += "⌘" }
         return prefix + keyDisplayName(for: configuration.keyCode)
+    }
+
+    static func mapHotkeyEvent(kind: UInt32) -> GlobalHotkeyEvent? {
+        if kind == UInt32(kEventHotKeyPressed) {
+            return .pressed
+        }
+        if kind == UInt32(kEventHotKeyReleased) {
+            return .released
+        }
+        return nil
     }
 
     private static func keyDisplayName(for keyCode: UInt32) -> String {
