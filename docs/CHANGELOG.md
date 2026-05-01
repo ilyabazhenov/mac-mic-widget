@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.6
+
+- Improved popover readability and visual hierarchy with updated spacing and typography.
+- Refined the global hotkey controls layout in settings for clearer actions.
+- Updated mute action button behavior and presentation (`Mute`/`Unmute` labels and state-driven tint).
+- Increased popover size to accommodate the updated two-tab interface and spacing.
+
 ## v0.1.5
 
 - Replaced the standalone popover level progress bar with a single slider that acts as both indicator and control.

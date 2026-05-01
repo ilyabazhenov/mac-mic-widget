@@ -53,7 +53,7 @@ Popover содержит:
 ### VR-1: Иконка в status bar
 
 - Иконка в status bar отображается в template rendering.
-- Для muted-состояния применяется акцентный цвет (`systemRed`) для более заметной индикации выключенного микрофона.
+- В muted-состоянии используется иконка `mic.slash.and.signal.meter.fill` с `variableValue = 0` (fallback: `mic.and.signal.meter.fill`), без дополнительной tint-подсветки.
 - Состояние и уровень показываются формой иконки (`mic.slash.and.signal.meter.fill` / `mic.and.signal.meter.fill`) и `variableValue`.
 
 ### VR-2: Стабильность layout в status bar и popover

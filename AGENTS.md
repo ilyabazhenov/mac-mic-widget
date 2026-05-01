@@ -35,9 +35,9 @@
 ## UI-контракт (не ломать)
 
 - В строке меню отображается единая template-иконка с visual-уровнем (variable SF Symbol `mic.and.signal.meter.fill` / `mic.slash.and.signal.meter.fill` при mute, при необходимости fallback на `mic.and.signal.meter.fill`), чтобы ширина status item оставалась стабильной; число процентов — в popover и tooltip.
-- В muted-состоянии иконка подсвечивается `systemRed` через `contentTintColor` для более явной индикации выключенного микрофона.
+- В muted-состоянии состояние должно определяться формой иконки (`mic.slash.and.signal.meter.fill`) и `variableValue = 0`; не добавлять текст в status item.
 - Кнопка mute/unmute в popover должна сохранять стабильную ширину между состояниями.
-- Progress bar в popover должен занимать всю доступную ширину контента.
+- Слайдер `Input level` в popover должен занимать всю доступную ширину контента и оставаться единым источником отображения/изменения уровня.
 
 ## Чеклист проверки после изменений
 
