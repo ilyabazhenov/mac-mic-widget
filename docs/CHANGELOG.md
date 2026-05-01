@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.8
+
+- Changed the default global hotkey to `Shift + Option + Z` for quicker one-hand access and fewer conflicts with common app shortcuts.
+- Added a regression test that locks the default hotkey display string to `⌥⇧Z`.
+- Updated README behavior notes to document the new default global hotkey.
+
 ## v0.1.7
 
 - Improved menu bar microphone state readability with a stronger muted indicator (`mic.slash.fill`) and subtle muted tint for faster glance recognition.

@@ -7,8 +7,8 @@ struct HotkeyConfiguration: Codable, Equatable {
     var modifiers: UInt32
 
     static let `default` = HotkeyConfiguration(
-        keyCode: UInt32(kVK_ANSI_M),
-        modifiers: GlobalHotkeyService.carbonFlags(from: [.command, .control, .option])
+        keyCode: UInt32(kVK_ANSI_Z),
+        modifiers: GlobalHotkeyService.carbonFlags(from: [.option, .shift])
     )
 }
 

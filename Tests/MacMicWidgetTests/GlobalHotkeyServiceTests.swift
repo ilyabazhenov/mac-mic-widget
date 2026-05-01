@@ -22,6 +22,11 @@ func globalHotkeyDisplayStringUsesReadableSymbols() {
 }
 
 @Test
+func globalHotkeyDefaultConfigurationDisplayString() {
+    #expect(GlobalHotkeyService.displayString(for: .default) == "⌥⇧Z")
+}
+
+@Test
 func globalHotkeyMapsCarbonEventKinds() {
     #expect(GlobalHotkeyService.mapHotkeyEvent(kind: UInt32(kEventHotKeyPressed)) == .pressed)
     #expect(GlobalHotkeyService.mapHotkeyEvent(kind: UInt32(kEventHotKeyReleased)) == .released)
