@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private var cancellables = Set<AnyCancellable>()
+    private let popoverWidth: CGFloat = 340
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = NSApp.setActivationPolicy(.accessory)
@@ -65,7 +66,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 320, height: 470)
+        popover.contentSize = NSSize(
+            width: popoverWidth,
+            height: MenuBarTab.defaultTab.preferredPopoverHeight
+        )
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView(
                 microphoneService: microphoneService,
@@ -79,9 +83,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 onSetInputVolumeFromPopover: { [weak self] volume in
                     self?.setInputVolumeFromPopover(volume)
+                },
+                onTabChanged: { [weak self] tab in
+                    self?.updatePopoverHeight(for: tab)
                 }
             )
         )
+    }
+
+    private func updatePopoverHeight(for tab: MenuBarTab) {
+        popover.contentSize = NSSize(width: popoverWidth, height: tab.preferredPopoverHeight)
     }
 
     private func bindStateUpdates() {

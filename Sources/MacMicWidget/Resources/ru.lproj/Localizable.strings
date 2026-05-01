@@ -2,8 +2,12 @@
 "menu.input_level" = "Уровень входа";
 "menu.input_device" = "Устройство ввода";
 "menu.system_default" = "Системное";
+"menu.tab_selector" = "Раздел";
+"menu.tab_microphone" = "Микрофон";
+"menu.tab_settings" = "Настройки";
 "menu.launch_at_login" = "Запускать при входе";
 "menu.enable_global_hotkey" = "Включить глобальный хоткей";
+"menu.hotkey_section" = "Хоткей";
 "menu.shortcut" = "Сочетание";
 "menu.record_shortcut" = "Записать хоткей";
 "menu.press_keys" = "Нажмите клавиши...";

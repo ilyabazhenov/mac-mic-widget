@@ -2,8 +2,12 @@
 "menu.input_level" = "Input level";
 "menu.input_device" = "Input device";
 "menu.system_default" = "System default";
+"menu.tab_selector" = "Section";
+"menu.tab_microphone" = "Microphone";
+"menu.tab_settings" = "Settings";
 "menu.launch_at_login" = "Launch at login";
 "menu.enable_global_hotkey" = "Enable global hotkey";
+"menu.hotkey_section" = "Hotkey";
 "menu.shortcut" = "Shortcut";
 "menu.record_shortcut" = "Record shortcut";
 "menu.press_keys" = "Press keys...";
