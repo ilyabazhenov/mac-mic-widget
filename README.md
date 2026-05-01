@@ -2,6 +2,8 @@
 
 `mac-mic-widget` (`Mac Mic Widget`) — лёгкое приложение для строки меню macOS, которое показывает текущий уровень входного микрофона и позволяет быстро переключать mute/unmute.
 
+Лицензия: [MIT](LICENSE). Сообщения об уязвимостях: [SECURITY.md](SECURITY.md). Участие: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Поведение
 
 - В строке меню — монохромная template-иконка с visual-индикатором уровня (SF Symbol); точный процент — в popover и tooltip.
@@ -95,3 +97,7 @@ COVERAGE_MIN=75 make coverage
 
 - Некоторые USB/Bluetooth-гарнитуры отдают input gain в нестандартном виде и могут не поддерживать запись через CoreAudio scalar property.
 - Приложение не захватывает аудио с микрофона: оно только читает/изменяет входной gain у устройства, выбранного системой как default input.
+
+## Лицензия
+
+Распространяется по лицензии MIT. Текст — в файле [LICENSE](LICENSE).
