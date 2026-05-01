@@ -1,11 +1,11 @@
 import SwiftUI
 import AppKit
 
-enum MicrophoneLevelLabel: String {
-    case muted = "Muted"
-    case low = "Low"
-    case medium = "Medium"
-    case high = "High"
+enum MicrophoneLevelLabel {
+    case muted
+    case low
+    case medium
+    case high
 }
 
 enum MenuBarPresentationLogic {
@@ -44,6 +44,11 @@ struct MenuBarView: View {
     @ObservedObject var microphoneService: MicrophoneService
     @ObservedObject var launchAtLoginService: LaunchAtLoginService
     @ObservedObject var globalHotkeyService: GlobalHotkeyService
+    @ObservedObject var visualFeedbackService: VisualFeedbackService
+    @ObservedObject var localizationService: LocalizationService
+    @ObservedObject var audioFeedbackService: AudioFeedbackService
+    let onToggleMuteFromPopover: () -> Void
+    let onSetInputVolumeFromPopover: (Float) -> Void
     @State private var sliderVolume: Double = 0
     @State private var isSliderEditing = false
     private let sectionSpacing: CGFloat = 16
@@ -54,7 +59,7 @@ struct MenuBarView: View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
                 VStack(alignment: .leading, spacing: compactSpacing) {
-                    Text("Microphone")
+                    Text(localizationService.string("menu.microphone"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("\(volumePercent)%")
@@ -74,7 +79,7 @@ struct MenuBarView: View {
 
             VStack(alignment: .leading, spacing: contentSpacing) {
                 HStack {
-                    Text("Input level")
+                    Text(localizationService.string("menu.input_level"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -91,10 +96,10 @@ struct MenuBarView: View {
 
             VStack(alignment: .leading, spacing: compactSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: contentSpacing) {
-                    Text("Input device")
+                    Text(localizationService.string("menu.input_device"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                    Text("System default")
+                    Text(localizationService.string("menu.system_default"))
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -109,10 +114,12 @@ struct MenuBarView: View {
             }
 
             Button {
-                microphoneService.toggleMute()
+                onToggleMuteFromPopover()
             } label: {
                 Label(
-                    microphoneService.isMuted ? "Unmute" : "Mute",
+                    microphoneService.isMuted
+                        ? localizationService.string("menu.unmute")
+                        : localizationService.string("menu.mute"),
                     systemImage: microphoneService.isMuted ? "mic.fill" : "mic.slash.fill"
                 )
                 .frame(maxWidth: .infinity)
@@ -129,12 +136,12 @@ struct MenuBarView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Toggle("Launch at login", isOn: launchAtLoginBinding)
+            Toggle(localizationService.string("menu.launch_at_login"), isOn: launchAtLoginBinding)
 
             VStack(alignment: .leading, spacing: contentSpacing) {
-                Toggle("Enable global hotkey", isOn: globalHotkeyBinding)
+                Toggle(localizationService.string("menu.enable_global_hotkey"), isOn: globalHotkeyBinding)
                 HStack {
-                    Text("Shortcut")
+                    Text(localizationService.string("menu.shortcut"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -143,7 +150,11 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: contentSpacing) {
-                    Button(globalHotkeyService.isRecording ? "Press keys..." : "Record shortcut") {
+                    Button(
+                        globalHotkeyService.isRecording
+                            ? localizationService.string("menu.press_keys")
+                            : localizationService.string("menu.record_shortcut")
+                    ) {
                         if globalHotkeyService.isRecording {
                             globalHotkeyService.cancelRecording()
                         } else {
@@ -153,7 +164,7 @@ struct MenuBarView: View {
                     .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity)
                     .controlSize(.regular)
-                    Button("Reset to default") {
+                    Button(localizationService.string("menu.reset_default")) {
                         globalHotkeyService.resetToDefault()
                     }
                     .buttonStyle(.bordered)
@@ -172,12 +183,43 @@ struct MenuBarView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                Text(localizationService.string("menu.feedback_section"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Toggle(localizationService.string("menu.show_visual_notifications"), isOn: visualFeedbackBinding)
+                Toggle(localizationService.string("menu.play_sound_notifications"), isOn: soundFeedbackBinding)
+                HStack {
+                    Text(localizationService.string("menu.sound_volume"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int((audioFeedbackService.volume * 100).rounded()))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: soundVolumeBinding, in: 0...1)
+                    .disabled(audioFeedbackService.isEnabled == false)
+            }
+
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                Text(localizationService.string("menu.language_section"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Picker(localizationService.string("menu.language_section"), selection: languageBinding) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(localizationService.displayName(for: language)).tag(language)
+                    }
+                }
+                .labelsHidden()
+            }
+
             if launchAtLoginService.needsLoginItemsApproval {
-                Text("Allow this app in System Settings → General → Login Items.")
+                Text(localizationService.string("menu.allow_login_items"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Open Login Items settings") {
+                Button(localizationService.string("menu.open_login_items")) {
                     launchAtLoginService.openLoginItemsSystemSettings()
                 }
                 .buttonStyle(.bordered)
@@ -192,7 +234,7 @@ struct MenuBarView: View {
 
             Divider()
 
-            Button("Quit") {
+            Button(localizationService.string("menu.quit")) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.bordered)
@@ -244,9 +286,37 @@ struct MenuBarView: View {
 
         let committedVolume = sliderVolume
         // Keep local mode during commit to avoid one-frame snap to stale service value.
-        microphoneService.setInputVolume(Float(committedVolume))
+        onSetInputVolumeFromPopover(Float(committedVolume))
         sliderVolume = committedVolume
         isSliderEditing = false
+    }
+
+    private var soundFeedbackBinding: Binding<Bool> {
+        Binding(
+            get: { audioFeedbackService.isEnabled },
+            set: { audioFeedbackService.setEnabled($0) }
+        )
+    }
+
+    private var soundVolumeBinding: Binding<Double> {
+        Binding(
+            get: { Double(audioFeedbackService.volume) },
+            set: { audioFeedbackService.setVolume(Float($0)) }
+        )
+    }
+
+    private var languageBinding: Binding<AppLanguage> {
+        Binding(
+            get: { localizationService.selectedLanguage },
+            set: { localizationService.setLanguage($0) }
+        )
+    }
+
+    private var visualFeedbackBinding: Binding<Bool> {
+        Binding(
+            get: { visualFeedbackService.isEnabled },
+            set: { visualFeedbackService.setEnabled($0) }
+        )
     }
 
     private var volumePercent: Int {
@@ -261,17 +331,29 @@ struct MenuBarView: View {
     }
 
     private var levelLabel: String {
-        MenuBarPresentationLogic.levelLabel(
+        let label = MenuBarPresentationLogic.levelLabel(
             isMuted: microphoneService.isMuted,
             volumePercent: volumePercent
-        ).rawValue
+        )
+        switch label {
+        case .muted:
+            return localizationService.string("level.muted")
+        case .low:
+            return localizationService.string("level.low")
+        case .medium:
+            return localizationService.string("level.medium")
+        case .high:
+            return localizationService.string("level.high")
+        }
     }
 
     private var hotkeyStatusText: String {
         if globalHotkeyService.isEnabled == false {
-            return "Hotkey disabled"
+            return localizationService.string("menu.hotkey_disabled")
         }
-        return globalHotkeyService.isHotkeyActive ? "Hotkey active" : "Hotkey unavailable (conflict)"
+        return globalHotkeyService.isHotkeyActive
+            ? localizationService.string("menu.hotkey_active")
+            : localizationService.string("menu.hotkey_unavailable")
     }
 
     private var hotkeyStatusColor: Color {

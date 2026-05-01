@@ -1,0 +1,47 @@
+"menu.microphone" = "Microphone";
+"menu.input_level" = "Input level";
+"menu.input_device" = "Input device";
+"menu.system_default" = "System default";
+"menu.launch_at_login" = "Launch at login";
+"menu.enable_global_hotkey" = "Enable global hotkey";
+"menu.shortcut" = "Shortcut";
+"menu.record_shortcut" = "Record shortcut";
+"menu.press_keys" = "Press keys...";
+"menu.reset_default" = "Reset to default";
+"menu.feedback_section" = "Feedback";
+"menu.show_visual_notifications" = "Show visual notifications";
+"menu.play_sound_notifications" = "Play sound notifications";
+"menu.sound_volume" = "Sound volume";
+"menu.language_section" = "Language";
+"menu.open_login_items" = "Open Login Items settings";
+"menu.allow_login_items" = "Allow this app in System Settings → General → Login Items.";
+"menu.quit" = "Quit";
+
+"menu.mute" = "Mute";
+"menu.unmute" = "Unmute";
+"menu.hotkey_disabled" = "Hotkey disabled";
+"menu.hotkey_active" = "Hotkey active";
+"menu.hotkey_unavailable" = "Hotkey unavailable (conflict)";
+
+"level.muted" = "Muted";
+"level.low" = "Low";
+"level.medium" = "Medium";
+"level.high" = "High";
+
+"tooltip.muted" = "Microphone muted — Left: open panel · Right: unmute";
+"tooltip.active" = "Microphone %d%% — Left: open panel · Right: mute/unmute";
+
+"hud.off" = "Mic Off";
+"hud.on" = "Mic %d%%";
+"hud.muted_subtitle" = "Microphone muted";
+"hud.active_subtitle" = "Microphone active";
+"hud.badge.off" = "OFF";
+"hud.badge.on" = "ON";
+
+"language.system" = "System";
+"language.english" = "English";
+"language.russian" = "Russian";
+
+"hotkey.error.add_modifier" = "Add at least one modifier key.";
+"hotkey.error.choose_non_modifier" = "Choose a non-modifier key.";
+"hotkey.error.unavailable" = "Hotkey unavailable (conflict).";

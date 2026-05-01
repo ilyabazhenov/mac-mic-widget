@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "MacMicWidget",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -13,7 +14,10 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "MacMicWidget"
+            name: "MacMicWidget",
+            resources: [
+                .process("Resources"),
+            ]
         ),
         .testTarget(
             name: "MacMicWidgetTests",

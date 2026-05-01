@@ -1,0 +1,47 @@
+"menu.microphone" = "Микрофон";
+"menu.input_level" = "Уровень входа";
+"menu.input_device" = "Устройство ввода";
+"menu.system_default" = "Системное";
+"menu.launch_at_login" = "Запускать при входе";
+"menu.enable_global_hotkey" = "Включить глобальный хоткей";
+"menu.shortcut" = "Сочетание";
+"menu.record_shortcut" = "Записать хоткей";
+"menu.press_keys" = "Нажмите клавиши...";
+"menu.reset_default" = "Сбросить по умолчанию";
+"menu.feedback_section" = "Уведомления";
+"menu.show_visual_notifications" = "Показывать визуальные уведомления";
+"menu.play_sound_notifications" = "Проигрывать звуковые уведомления";
+"menu.sound_volume" = "Громкость уведомлений";
+"menu.language_section" = "Язык";
+"menu.open_login_items" = "Открыть настройки элементов входа";
+"menu.allow_login_items" = "Разрешите это приложение в Системные настройки → Основные → Объекты входа.";
+"menu.quit" = "Выйти";
+
+"menu.mute" = "Выключить";
+"menu.unmute" = "Включить";
+"menu.hotkey_disabled" = "Хоткей выключен";
+"menu.hotkey_active" = "Хоткей активен";
+"menu.hotkey_unavailable" = "Хоткей недоступен (конфликт)";
+
+"level.muted" = "Выкл";
+"level.low" = "Низкий";
+"level.medium" = "Средний";
+"level.high" = "Высокий";
+
+"tooltip.muted" = "Микрофон выключен — ЛКМ: открыть панель · ПКМ: включить";
+"tooltip.active" = "Микрофон %d%% — ЛКМ: открыть панель · ПКМ: выключить/включить";
+
+"hud.off" = "Микрофон выкл";
+"hud.on" = "Микрофон %d%%";
+"hud.muted_subtitle" = "Микрофон выключен";
+"hud.active_subtitle" = "Микрофон активен";
+"hud.badge.off" = "ВЫКЛ";
+"hud.badge.on" = "ВКЛ";
+
+"language.system" = "Системный";
+"language.english" = "English";
+"language.russian" = "Русский";
+
+"hotkey.error.add_modifier" = "Добавьте хотя бы одну клавишу-модификатор.";
+"hotkey.error.choose_non_modifier" = "Выберите клавишу, не являющуюся модификатором.";
+"hotkey.error.unavailable" = "Хоткей недоступен (конфликт).";

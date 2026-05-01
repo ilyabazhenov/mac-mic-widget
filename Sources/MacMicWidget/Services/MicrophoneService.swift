@@ -45,7 +45,8 @@ final class MicrophoneService: ObservableObject {
         timer = nil
     }
 
-    func toggleMute() {
+    @discardableResult
+    func toggleMute() -> Bool {
         do {
             clearPendingUserVolume()
             let current = try backend.readInputVolume()
@@ -58,8 +59,10 @@ final class MicrophoneService: ObservableObject {
             }
             lastError = nil
             refreshVolume()
+            return true
         } catch {
             lastError = error.localizedDescription
+            return false
         }
     }
 

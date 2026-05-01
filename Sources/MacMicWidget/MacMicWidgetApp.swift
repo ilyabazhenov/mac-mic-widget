@@ -24,8 +24,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private let microphoneService = MicrophoneService()
     private let launchAtLoginService = LaunchAtLoginService()
+    private let visualFeedbackService = VisualFeedbackService()
+    private let localizationService = LocalizationService()
+    private lazy var floatingHUDController = FloatingHUDController(localizationService: localizationService)
+    private let audioFeedbackService = AudioFeedbackService()
     private lazy var globalHotkeyService = GlobalHotkeyService { [weak self] in
-        self?.microphoneService.toggleMute()
+        self?.handleExternalToggle(source: .globalHotkey)
     }
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
@@ -66,7 +70,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: MenuBarView(
                 microphoneService: microphoneService,
                 launchAtLoginService: launchAtLoginService,
-                globalHotkeyService: globalHotkeyService
+                globalHotkeyService: globalHotkeyService,
+                visualFeedbackService: visualFeedbackService,
+                localizationService: localizationService,
+                audioFeedbackService: audioFeedbackService,
+                onToggleMuteFromPopover: { [weak self] in
+                    self?.toggleMuteFromPopover()
+                },
+                onSetInputVolumeFromPopover: { [weak self] volume in
+                    self?.setInputVolumeFromPopover(volume)
+                }
             )
         )
     }
@@ -76,6 +89,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .combineLatest(microphoneService.$isMuted)
             .receive(on: RunLoop.main)
             .sink { [weak self] _, _ in
+                self?.updateStatusButton()
+            }
+            .store(in: &cancellables)
+
+        localizationService.$selectedLanguage
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
                 self?.updateStatusButton()
             }
             .store(in: &cancellables)
@@ -89,8 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if action == .toggleMuteWithoutPopover {
             popover.performClose(nil)
-            microphoneService.toggleMute()
-            updateStatusButton()
+            handleExternalToggle(source: .statusItemSecondaryClick)
             return
         }
 
@@ -104,6 +123,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
+    }
+
+    private func handleExternalToggle(source: MicrophoneChangeSource) {
+        let didToggle = microphoneService.toggleMute()
+        updateStatusButton()
+        guard didToggle else {
+            return
+        }
+
+        let state = makeFeedbackState(source: source)
+        if visualFeedbackService.isEnabled {
+            floatingHUDController.show(state: state)
+        }
+        audioFeedbackService.play(for: state)
+    }
+
+    private func toggleMuteFromPopover() {
+        _ = microphoneService.toggleMute()
+        updateStatusButton()
+    }
+
+    private func setInputVolumeFromPopover(_ value: Float) {
+        microphoneService.setInputVolume(value)
+        updateStatusButton()
     }
 
     static func classifyStatusItemAction(
@@ -140,11 +183,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Int((microphoneService.inputVolume * 100).rounded())
     }
 
+    private func makeFeedbackState(source: MicrophoneChangeSource) -> MicrophoneFeedbackState {
+        MicrophoneFeedbackState(
+            isMuted: microphoneService.isMuted,
+            volumePercent: volumePercent,
+            triggerSource: source,
+            timestamp: Date()
+        )
+    }
+
     private var statusItemToolTip: String {
         if microphoneService.isMuted {
-            return "Microphone muted — Left: open panel · Right: unmute"
+            return localizationService.string("tooltip.muted")
         }
-        return "Microphone \(volumePercent)% — Left: open panel · Right: mute/unmute"
+        return localizationService.string("tooltip.active", volumePercent)
     }
 
     private func statusSymbolImage(level: Double) -> NSImage {
