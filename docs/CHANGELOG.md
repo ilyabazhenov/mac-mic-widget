@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.7
+
+- Improved menu bar microphone state readability with a stronger muted indicator (`mic.slash.fill`) and subtle muted tint for faster glance recognition.
+- Stabilized status item width by using a fixed square slot to eliminate visible jumps when toggling mute/unmute.
+- Added a dedicated status item presentation logic module and focused unit tests for muted symbol selection and visual-level mapping behavior.
+
 ## v0.1.6
 
 - Improved popover readability and visual hierarchy with updated spacing and typography.
