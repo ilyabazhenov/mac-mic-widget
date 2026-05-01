@@ -50,3 +50,8 @@
 "hotkey.error.add_modifier" = "Add at least one modifier key.";
 "hotkey.error.choose_non_modifier" = "Choose a non-modifier key.";
 "hotkey.error.unavailable" = "Hotkey unavailable (conflict).";
+
+"menu.sound_preset" = "Sound preset";
+"menu.sound_preset_soft_balanced" = "Soft balanced";
+"menu.sound_preset_ultra_soft" = "Ultra soft";
+"menu.sound_preset_crisp_short" = "Crisp short";

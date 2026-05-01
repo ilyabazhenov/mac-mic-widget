@@ -143,7 +143,7 @@ func audioFeedbackVolumePersistsAndIsUsedForPlayback() {
         triggerSource: .globalHotkey,
         timestamp: .now
     ))
-    #expect(abs((player.playedVolumes.last ?? 0) - 0.35) < 0.0001)
+    #expect(abs((player.playedVolumes.last ?? 0) - 0.308) < 0.0001)
 
     let restored = AudioFeedbackService(
         defaults: defaults,
@@ -184,6 +184,107 @@ func audioFeedbackRespectsDebounceInterval() {
     now = now.addingTimeInterval(1.1)
     service.play(for: state)
     #expect(player.playedNames.count == 2)
+}
+
+@MainActor
+@Test
+func audioFeedbackUsesDistinctCuesForMuteAndUnmute() {
+    let player = MockAudioCuePlayer()
+    let service = AudioFeedbackService(
+        defaults: UserDefaults(suiteName: #function)!,
+        player: player,
+        minInterval: 0,
+        now: Date.init
+    )
+    service.setEnabled(true)
+    service.setVolume(0.8)
+
+    service.play(for: MicrophoneFeedbackState(
+        isMuted: true,
+        volumePercent: 0,
+        triggerSource: .globalHotkey,
+        timestamp: .now
+    ))
+    service.play(for: MicrophoneFeedbackState(
+        isMuted: false,
+        volumePercent: 40,
+        triggerSource: .globalHotkey,
+        timestamp: .now
+    ))
+
+    #expect(player.playedNames == [NSSound.Name("Pop"), NSSound.Name("Glass")])
+    #expect(abs((player.playedVolumes.first ?? 0) - 0.704) < 0.0001)
+    #expect(abs((player.playedVolumes.last ?? 0) - 0.704) < 0.0001)
+}
+
+@MainActor
+@Test
+func audioFeedbackAppliesSeparateRateLimitsForErrorAndPermissionSignals() {
+    let suiteName = "audioFeedbackAppliesSeparateRateLimitsForErrorAndPermissionSignals"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defaults.removePersistentDomain(forName: suiteName)
+
+    var now = Date(timeIntervalSince1970: 2_000)
+    let player = MockAudioCuePlayer()
+    let service = AudioFeedbackService(
+        defaults: defaults,
+        player: player,
+        minInterval: 0,
+        errorMinInterval: 3.0,
+        permissionMinInterval: 10.0,
+        now: { now }
+    )
+    service.setEnabled(true)
+
+    service.playError()
+    service.playError()
+    #expect(player.playedNames == [NSSound.Name("Morse")])
+
+    now = now.addingTimeInterval(3.1)
+    service.playError()
+    #expect(player.playedNames == [NSSound.Name("Morse"), NSSound.Name("Morse")])
+
+    service.playPermissionNeeded()
+    service.playPermissionNeeded()
+    #expect(player.playedNames.last == NSSound.Name("Ping"))
+    #expect(player.playedNames.filter { $0 == NSSound.Name("Ping") }.count == 1)
+
+    now = now.addingTimeInterval(10.1)
+    service.playPermissionNeeded()
+    #expect(player.playedNames.filter { $0 == NSSound.Name("Ping") }.count == 2)
+}
+
+@MainActor
+@Test
+func audioFeedbackUsesSelectedPresetAndPersistsIt() {
+    let suiteName = "audioFeedbackUsesSelectedPresetAndPersistsIt"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defaults.removePersistentDomain(forName: suiteName)
+
+    let player = MockAudioCuePlayer()
+    let service = AudioFeedbackService(
+        defaults: defaults,
+        player: player,
+        minInterval: 0,
+        now: Date.init
+    )
+    service.setEnabled(true)
+    service.setSoundPreset(.ultraSoft)
+    service.play(for: MicrophoneFeedbackState(
+        isMuted: true,
+        volumePercent: 0,
+        triggerSource: .globalHotkey,
+        timestamp: .now
+    ))
+    #expect(player.playedNames.last == NSSound.Name("Purr"))
+
+    let restored = AudioFeedbackService(
+        defaults: defaults,
+        player: player,
+        minInterval: 0,
+        now: Date.init
+    )
+    #expect(restored.soundPreset == .ultraSoft)
 }
 
 @MainActor

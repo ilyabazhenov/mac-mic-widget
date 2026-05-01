@@ -182,6 +182,13 @@ struct MenuBarView: View {
         )
     }
 
+    private var soundPresetBinding: Binding<AudioFeedbackService.SoundPreset> {
+        Binding(
+            get: { audioFeedbackService.soundPreset },
+            set: { audioFeedbackService.setSoundPreset($0) }
+        )
+    }
+
     private var languageBinding: Binding<AppLanguage> {
         Binding(
             get: { localizationService.selectedLanguage },
@@ -383,6 +390,20 @@ struct MenuBarView: View {
                     .foregroundStyle(.secondary)
                 Toggle(localizationService.string("menu.show_visual_notifications"), isOn: visualFeedbackBinding)
                 Toggle(localizationService.string("menu.play_sound_notifications"), isOn: soundFeedbackBinding)
+                VStack(alignment: .leading, spacing: compactSpacing) {
+                    Text(localizationService.string("menu.sound_preset"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: soundPresetBinding) {
+                        ForEach(AudioFeedbackService.SoundPreset.allCases, id: \.self) { preset in
+                            Text(localizationService.string(preset.localizationKey)).tag(preset)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .disabled(audioFeedbackService.isEnabled == false)
+                }
                 HStack {
                     Text(localizationService.string("menu.sound_volume"))
                         .font(.caption)

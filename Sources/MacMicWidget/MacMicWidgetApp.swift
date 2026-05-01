@@ -120,6 +120,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.updateStatusButton()
             }
             .store(in: &cancellables)
+
+        microphoneService.$lastError
+            .dropFirst()
+            .compactMap { $0 }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.audioFeedbackService.playError()
+            }
+            .store(in: &cancellables)
+
+        globalHotkeyService.$lastError
+            .dropFirst()
+            .compactMap { $0 }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.audioFeedbackService.playError()
+            }
+            .store(in: &cancellables)
+
+        launchAtLoginService.$lastError
+            .dropFirst()
+            .compactMap { $0 }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.audioFeedbackService.playError()
+            }
+            .store(in: &cancellables)
+
+        launchAtLoginService.$needsLoginItemsApproval
+            .dropFirst()
+            .removeDuplicates()
+            .filter { $0 }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.audioFeedbackService.playPermissionNeeded()
+            }
+            .store(in: &cancellables)
     }
 
     @objc

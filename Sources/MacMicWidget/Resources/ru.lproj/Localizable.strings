@@ -50,3 +50,8 @@
 "hotkey.error.add_modifier" = "Добавьте хотя бы одну клавишу-модификатор.";
 "hotkey.error.choose_non_modifier" = "Выберите клавишу, не являющуюся модификатором.";
 "hotkey.error.unavailable" = "Хоткей недоступен (конфликт).";
+
+"menu.sound_preset" = "Пресет звука";
+"menu.sound_preset_soft_balanced" = "Мягкий сбалансированный";
+"menu.sound_preset_ultra_soft" = "Очень мягкий";
+"menu.sound_preset_crisp_short" = "Короткий четкий";
