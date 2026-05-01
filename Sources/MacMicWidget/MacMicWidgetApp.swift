@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = item.button else { return }
 
         button.target = self
@@ -260,16 +260,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusButton() {
         guard let button = statusItem?.button else { return }
 
-        let level = microphoneService.isMuted ? 0.0 : min(1, max(0, Double(microphoneService.inputVolume)))
-        let base = statusSymbolImage(level: level)
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        let presentation = StatusItemPresentationLogic.makePresentation(
+            isMuted: microphoneService.isMuted,
+            inputVolume: microphoneService.inputVolume
+        )
+        let base = statusSymbolImage(presentation: presentation)
+        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 14, weight: .bold)
         let image = (base.withSymbolConfiguration(sizeConfig) ?? base)
         image.isTemplate = true
 
         button.image = image
         button.title = ""
         button.imagePosition = .imageOnly
-        button.contentTintColor = nil
+        button.contentTintColor = microphoneService.isMuted
+            ? NSColor.systemRed.withAlphaComponent(0.75)
+            : nil
         button.toolTip = statusItemToolTip
     }
 
@@ -293,13 +298,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return localizationService.string("tooltip.active", volumePercent)
     }
 
-    private func statusSymbolImage(level: Double) -> NSImage {
-        let symbolName = microphoneService.isMuted
-            ? "mic.slash.and.signal.meter.fill"
-            : "mic.and.signal.meter.fill"
+    private func statusSymbolImage(presentation: StatusItemPresentation) -> NSImage {
         let image = NSImage(
-            systemSymbolName: symbolName,
-            variableValue: level,
+            systemSymbolName: presentation.symbolName,
+            variableValue: presentation.variableValue,
             accessibilityDescription: "Microphone"
         )
         if let image {
@@ -309,7 +311,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Fallback for systems that may not have slash+meter symbol.
         return NSImage(
             systemSymbolName: "mic.and.signal.meter.fill",
-            variableValue: level,
+            variableValue: presentation.variableValue,
             accessibilityDescription: "Microphone"
         ) ?? NSImage()
     }
