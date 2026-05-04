@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.9
+
+- Added GitHub Actions CI workflow that runs tests and coverage checks on each push and pull request to improve release confidence.
+- Fixed Swift toolchain setup in CI to use an available version and removed `ripgrep` dependency from the coverage parser for better runner compatibility.
+- Added open-source baseline repository metadata (`LICENSE`, `SECURITY.md`, and `CONTRIBUTING.md`) to clarify usage and contribution expectations.
+
 ## v0.1.8
 
 - Changed the default global hotkey to `Shift + Option + Z` for quicker one-hand access and fewer conflicts with common app shortcuts.
