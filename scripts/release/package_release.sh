@@ -15,6 +15,9 @@ fi
 BUILD_DIR="$ROOT_DIR/.build/arm64-apple-macosx/release"
 DIST_DIR="$ROOT_DIR/dist/$VERSION"
 APP_DIR="$DIST_DIR/$APP_NAME.app"
+RESOURCE_BUNDLE_NAME="${APP_NAME}_${APP_NAME}.bundle"
+RESOURCE_BUNDLE_SRC="$BUILD_DIR/$RESOURCE_BUNDLE_NAME"
+RESOURCE_BUNDLE_DST="$APP_DIR/$RESOURCE_BUNDLE_NAME"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
@@ -28,12 +31,17 @@ if [[ ! -x "$BUILD_DIR/$APP_NAME" ]]; then
   echo "ERROR: release executable not found at $BUILD_DIR/$APP_NAME"
   exit 1
 fi
+if [[ ! -d "$RESOURCE_BUNDLE_SRC" ]]; then
+  echo "ERROR: SPM resource bundle not found at $RESOURCE_BUNDLE_SRC"
+  exit 1
+fi
 
 echo "==> Preparing app bundle"
 rm -rf "$DIST_DIR"
 mkdir -p "$MACOS_DIR"
 cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
 chmod 755 "$MACOS_DIR/$APP_NAME"
+cp -R "$RESOURCE_BUNDLE_SRC" "$RESOURCE_BUNDLE_DST"
 mkdir -p "$RESOURCES_DIR"
 if [[ -f "$ROOT_DIR/assets/AppIcon.icns" ]]; then
   cp "$ROOT_DIR/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
@@ -74,8 +82,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
 </plist>
 EOF
 
-echo "==> Applying ad-hoc signature to app bundle"
-codesign --force --deep --sign - "$APP_DIR"
+echo "==> Skipping ad-hoc bundle signing for unsigned distribution"
+echo "    (SPM resource bundle is intentionally placed at app root for Bundle.module lookup)."
 
 echo "==> Creating distributable zip"
 (
