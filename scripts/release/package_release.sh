@@ -33,6 +33,7 @@ echo "==> Preparing app bundle"
 rm -rf "$DIST_DIR"
 mkdir -p "$MACOS_DIR"
 cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
+chmod 755 "$MACOS_DIR/$APP_NAME"
 mkdir -p "$RESOURCES_DIR"
 if [[ -f "$ROOT_DIR/assets/AppIcon.icns" ]]; then
   cp "$ROOT_DIR/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"

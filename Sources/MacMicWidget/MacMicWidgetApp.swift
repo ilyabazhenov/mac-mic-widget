@@ -47,13 +47,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = NSApp.setActivationPolicy(.accessory)
-        microphoneService.start()
         setupStatusItem()
         setupPopover()
         bindStateUpdates()
         updateStatusButton()
-        launchAtLoginService.refreshStatus()
-        globalHotkeyService.start()
+        // Start potentially expensive services after menu bar item is visible.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.microphoneService.start()
+            self.launchAtLoginService.refreshStatus()
+            self.globalHotkeyService.start()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
