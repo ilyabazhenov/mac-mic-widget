@@ -44,19 +44,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private var cancellables = Set<AnyCancellable>()
     private let popoverWidth: CGFloat = 340
+    private let startupLog = StartupLog()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        startupLog.write("applicationDidFinishLaunching entered")
         _ = NSApp.setActivationPolicy(.accessory)
+        startupLog.write("activation policy set to accessory")
         setupStatusItem()
+        startupLog.write("status item setup done")
         setupPopover()
-        bindStateUpdates()
+        startupLog.write("popover setup done")
+
+        let isSafeMode = ProcessInfo.processInfo.environment["MMW_SAFE_MODE"] == "1"
+        startupLog.write("safe mode: \(isSafeMode)")
+
+        if isSafeMode == false {
+            bindStateUpdates()
+            startupLog.write("state bindings configured")
+        }
+
         updateStatusButton()
+        startupLog.write("status button updated")
+
         // Start potentially expensive services after menu bar item is visible.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            self.startupLog.write("deferred startup entered")
+            if isSafeMode {
+                self.startupLog.write("safe mode active, skipping service startup")
+                return
+            }
+
             self.microphoneService.start()
+            self.startupLog.write("microphone service started")
+
             self.launchAtLoginService.refreshStatus()
+            self.startupLog.write("launch-at-login status refreshed")
+
             self.globalHotkeyService.start()
+            self.startupLog.write("global hotkey service started")
         }
     }
 
@@ -83,6 +109,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             width: popoverWidth,
             height: MenuBarTab.defaultTab.preferredPopoverHeight
         )
+    }
+
+    private func ensurePopoverContentConfigured() {
+        guard popover.contentViewController == nil else { return }
         popover.contentViewController = NSHostingController(
             rootView: MenuBarView(
                 microphoneService: microphoneService,
@@ -185,6 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else {
+            ensurePopoverContentConfigured()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
@@ -340,4 +371,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) ?? NSImage()
     }
 
+}
+
+private struct StartupLog {
+    private let url: URL?
+
+    init(fileManager: FileManager = .default) {
+        guard let logsDirectory = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            self.url = nil
+            return
+        }
+        let directory = logsDirectory
+            .appendingPathComponent("Logs", isDirectory: true)
+            .appendingPathComponent("MacMicWidget", isDirectory: true)
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            self.url = nil
+            return
+        }
+        self.url = directory.appendingPathComponent("startup.log")
+    }
+
+    func write(_ message: String) {
+        guard let url else { return }
+        let formatter = ISO8601DateFormatter()
+        let line = "\(formatter.string(from: Date())) \(message)\n"
+        let data = Data(line.utf8)
+
+        if FileManager.default.fileExists(atPath: url.path) == false {
+            FileManager.default.createFile(atPath: url.path, contents: data)
+            return
+        }
+
+        do {
+            let handle = try FileHandle(forWritingTo: url)
+            defer { try? handle.close() }
+            try handle.seekToEnd()
+            try handle.write(contentsOf: data)
+        } catch {
+            // Avoid affecting app startup in case of logging failures.
+        }
+    }
 }
