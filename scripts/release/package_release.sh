@@ -73,6 +73,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
 </plist>
 EOF
 
+echo "==> Applying ad-hoc signature to app bundle"
+codesign --force --deep --sign - "$APP_DIR"
+
 echo "==> Creating distributable zip"
 (
   cd "$DIST_DIR"
