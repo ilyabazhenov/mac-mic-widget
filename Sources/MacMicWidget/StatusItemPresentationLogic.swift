@@ -14,7 +14,7 @@ enum StatusItemPresentationLogic {
     static func makePresentation(isMuted: Bool, inputVolume: Float) -> StatusItemPresentation {
         if isMuted {
             return StatusItemPresentation(
-                symbolName: "mic.slash.fill",
+                symbolName: "mic.slash.and.signal.meter.fill",
                 variableValue: 0
             )
         }

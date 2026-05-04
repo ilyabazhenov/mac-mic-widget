@@ -5,7 +5,7 @@ import Testing
 func statusItemPresentationUsesMutedSymbolAndZeroLevel() {
     let presentation = StatusItemPresentationLogic.makePresentation(isMuted: true, inputVolume: 0.84)
 
-    #expect(presentation.symbolName == "mic.slash.fill")
+    #expect(presentation.symbolName == "mic.slash.and.signal.meter.fill")
     #expect(presentation.variableValue == 0)
 }
 

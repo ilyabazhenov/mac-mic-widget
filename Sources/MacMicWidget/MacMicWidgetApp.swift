@@ -303,19 +303,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func statusSymbolImage(presentation: StatusItemPresentation) -> NSImage {
-        let image = NSImage(
+        if let variableImage = NSImage(
             systemSymbolName: presentation.symbolName,
             variableValue: presentation.variableValue,
             accessibilityDescription: "Microphone"
-        )
-        if let image {
-            return image
+        ) {
+            return variableImage
         }
 
-        // Fallback for systems that may not have slash+meter symbol.
-        return NSImage(
+        if let fixedImage = NSImage(
+            systemSymbolName: presentation.symbolName,
+            accessibilityDescription: "Microphone"
+        ) {
+            return fixedImage
+        }
+
+        // Fallback for systems that may not have slash+meter symbol or variable symbols.
+        if let fallbackVariableImage = NSImage(
             systemSymbolName: "mic.and.signal.meter.fill",
             variableValue: presentation.variableValue,
+            accessibilityDescription: "Microphone"
+        ) {
+            return fallbackVariableImage
+        }
+
+        if let fallbackFixedImage = NSImage(
+            systemSymbolName: "mic.and.signal.meter.fill",
+            accessibilityDescription: "Microphone"
+        ) {
+            return fallbackFixedImage
+        }
+
+        return NSImage(
+            systemSymbolName: "mic.fill",
             accessibilityDescription: "Microphone"
         ) ?? NSImage()
     }
