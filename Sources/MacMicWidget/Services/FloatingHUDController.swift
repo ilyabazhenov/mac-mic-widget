@@ -1,17 +1,56 @@
 import AppKit
 import SwiftUI
 
+struct FloatingHUDScreenGeometry: Equatable {
+    let frame: NSRect
+    let visibleFrame: NSRect
+    let isBuiltIn: Bool
+
+    init(frame: NSRect, visibleFrame: NSRect, isBuiltIn: Bool = false) {
+        self.frame = frame
+        self.visibleFrame = visibleFrame
+        self.isBuiltIn = isBuiltIn
+    }
+}
+
+enum FloatingHUDScreenSelectionLogic {
+    static func visibleFrame(
+        for mode: VisualFeedbackScreenMode,
+        screens: [FloatingHUDScreenGeometry],
+        mainScreen: FloatingHUDScreenGeometry?,
+        mouseLocation: NSPoint
+    ) -> NSRect? {
+        let preferredMainVisibleFrame = screens.first { $0.isBuiltIn }?.visibleFrame
+            ?? mainScreen?.visibleFrame
+            ?? screens.first?.visibleFrame
+
+        switch mode {
+        case .main:
+            return preferredMainVisibleFrame
+        case .active:
+            return screens.first { $0.frame.contains(mouseLocation) }?.visibleFrame
+                ?? preferredMainVisibleFrame
+        }
+    }
+}
+
 @MainActor
 final class FloatingHUDController {
     private let localizationService: LocalizationService
+    private let visualFeedbackService: VisualFeedbackService
     private let displayDuration: TimeInterval
     private let panelSize = NSSize(width: 280, height: 56)
     private var hideTimer: Timer?
     private var panel: NSPanel?
     private var hostingController: NSHostingController<FloatingHUDView>?
 
-    init(localizationService: LocalizationService, displayDuration: TimeInterval = 1.2) {
+    init(
+        localizationService: LocalizationService,
+        visualFeedbackService: VisualFeedbackService,
+        displayDuration: TimeInterval = 1.2
+    ) {
         self.localizationService = localizationService
+        self.visualFeedbackService = visualFeedbackService
         self.displayDuration = displayDuration
     }
 
@@ -76,14 +115,42 @@ final class FloatingHUDController {
     }
 
     private func position(panel: NSPanel) {
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
-        let visibleFrame = screen.visibleFrame
+        let screens = NSScreen.screens.map {
+            FloatingHUDScreenGeometry(
+                frame: $0.frame,
+                visibleFrame: $0.visibleFrame,
+                isBuiltIn: Self.isBuiltInDisplay($0)
+            )
+        }
+        let mainScreen = (NSScreen.main ?? NSScreen.screens.first).map {
+            FloatingHUDScreenGeometry(
+                frame: $0.frame,
+                visibleFrame: $0.visibleFrame,
+                isBuiltIn: Self.isBuiltInDisplay($0)
+            )
+        }
+        guard let visibleFrame = FloatingHUDScreenSelectionLogic.visibleFrame(
+            for: visualFeedbackService.screenMode,
+            screens: screens,
+            mainScreen: mainScreen,
+            mouseLocation: NSEvent.mouseLocation
+        ) else { return }
         let frameSize = panel.frame.size
         let width = frameSize.width > 0 ? frameSize.width : panelSize.width
         let height = frameSize.height > 0 ? frameSize.height : panelSize.height
         let x = visibleFrame.midX - (width / 2)
         let y = visibleFrame.maxY - height - 36
         panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    private static func isBuiltInDisplay(_ screen: NSScreen) -> Bool {
+        guard
+            let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
+            return false
+        }
+
+        return CGDisplayIsBuiltin(CGDirectDisplayID(screenNumber.uint32Value)) != 0
     }
 
     private func restartHideTimer() {

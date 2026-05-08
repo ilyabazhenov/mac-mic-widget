@@ -8,7 +8,11 @@ struct FloatingHUDView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(accentColor.opacity(0.18))
+                    .fill(accentColor.opacity(0.12))
+                    .overlay(
+                        Circle()
+                            .strokeBorder(accentColor.opacity(0.2), lineWidth: 0.5)
+                    )
                 Image(systemName: state.isMuted ? "mic.slash.fill" : "mic.fill")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(accentColor)

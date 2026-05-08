@@ -30,14 +30,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let microphoneService = MicrophoneService()
     private let launchAtLoginService = LaunchAtLoginService()
     private let visualFeedbackService = VisualFeedbackService()
+    private let statusItemClickBehaviorService = StatusItemClickBehaviorService()
     private let localizationService = LocalizationService()
     private let holdToUnmuteService = HoldToUnmuteService()
-    private lazy var floatingHUDController = FloatingHUDController(localizationService: localizationService)
+    private lazy var floatingHUDController = FloatingHUDController(
+        localizationService: localizationService,
+        visualFeedbackService: visualFeedbackService
+    )
     private let audioFeedbackService = AudioFeedbackService()
     private lazy var globalHotkeyService = GlobalHotkeyService(
         toggleHandler: { },
         eventHandler: { [weak self] event in
             self?.handleGlobalHotkeyEvent(event)
+        },
+        diagnostics: { [startupLog] message in
+            startupLog.write("global hotkey: \(message)")
         }
     )
     private var statusItem: NSStatusItem?
@@ -75,19 +82,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
 
-            self.microphoneService.start()
-            self.startupLog.write("microphone service started")
-
-            self.launchAtLoginService.refreshStatus()
-            self.startupLog.write("launch-at-login status refreshed")
-
-            self.globalHotkeyService.start()
-            self.startupLog.write("global hotkey service started")
+            Self.startDeferredServices(
+                startGlobalHotkey: {
+                    self.globalHotkeyService.start()
+                    self.startupLog.write("global hotkey service started")
+                },
+                startMicrophone: {
+                    self.microphoneService.start()
+                    self.startupLog.write("microphone service started")
+                },
+                refreshLaunchAtLogin: {
+                    self.launchAtLoginService.refreshStatus()
+                    self.startupLog.write("launch-at-login status refreshed")
+                }
+            )
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         microphoneService.stop()
+    }
+
+    static func startDeferredServices(
+        startGlobalHotkey: () -> Void,
+        startMicrophone: () -> Void,
+        refreshLaunchAtLogin: () -> Void
+    ) {
+        startGlobalHotkey()
+        startMicrophone()
+        refreshLaunchAtLogin()
     }
 
     private func setupStatusItem() {
@@ -119,6 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 launchAtLoginService: launchAtLoginService,
                 globalHotkeyService: globalHotkeyService,
                 visualFeedbackService: visualFeedbackService,
+                statusItemClickBehaviorService: statusItemClickBehaviorService,
                 localizationService: localizationService,
                 audioFeedbackService: audioFeedbackService,
                 holdToUnmuteService: holdToUnmuteService,
@@ -149,6 +173,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
 
         localizationService.$selectedLanguage
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateStatusButton()
+            }
+            .store(in: &cancellables)
+
+        statusItemClickBehaviorService.$clickBehavior
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateStatusButton()
@@ -200,7 +231,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleStatusItemClick() {
         guard let button = statusItem?.button else { return }
         guard let event = NSApp.currentEvent else { return }
-        let action = AppDelegate.classifyStatusItemAction(eventType: event.type, modifierFlags: event.modifierFlags)
+        let action = AppDelegate.classifyStatusItemAction(
+            eventType: event.type,
+            modifierFlags: event.modifierFlags,
+            clickBehavior: statusItemClickBehaviorService.clickBehavior
+        )
 
         if action == .toggleMuteWithoutPopover {
             popover.performClose(nil)
@@ -280,14 +315,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     static func classifyStatusItemAction(
         eventType: NSEvent.EventType,
-        modifierFlags: NSEvent.ModifierFlags
+        modifierFlags: NSEvent.ModifierFlags,
+        clickBehavior: StatusItemClickBehavior
     ) -> StatusItemAction {
         let isCtrlLeftClick = eventType == .leftMouseUp && modifierFlags.contains(.control)
-        if eventType == .rightMouseDown || isCtrlLeftClick {
-            return .toggleMuteWithoutPopover
-        }
-        if eventType == .leftMouseUp {
-            return .togglePopover
+        let isSecondaryClick = eventType == .rightMouseDown || isCtrlLeftClick
+
+        switch clickBehavior {
+        case .openControlsOnLeftClick:
+            if isSecondaryClick {
+                return .toggleMuteWithoutPopover
+            }
+            if eventType == .leftMouseUp {
+                return .togglePopover
+            }
+        case .toggleMuteOnLeftClick:
+            if isSecondaryClick {
+                return .togglePopover
+            }
+            if eventType == .leftMouseUp {
+                return .toggleMuteWithoutPopover
+            }
         }
         return .ignore
     }
@@ -300,16 +348,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             inputVolume: microphoneService.inputVolume
         )
         let base = statusSymbolImage(presentation: presentation)
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 14, weight: .bold)
+        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
         let image = (base.withSymbolConfiguration(sizeConfig) ?? base)
         image.isTemplate = true
 
         button.image = image
         button.title = ""
         button.imagePosition = .imageOnly
-        button.contentTintColor = microphoneService.isMuted
-            ? NSColor.systemRed.withAlphaComponent(0.75)
-            : nil
+        button.contentTintColor = nil
         button.toolTip = statusItemToolTip
     }
 
@@ -327,10 +373,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var statusItemToolTip: String {
+        let key = StatusItemPresentationLogic.tooltipKey(
+            isMuted: microphoneService.isMuted,
+            clickBehavior: statusItemClickBehaviorService.clickBehavior
+        )
         if microphoneService.isMuted {
-            return localizationService.string("tooltip.muted")
+            return localizationService.string(key)
         }
-        return localizationService.string("tooltip.active", volumePercent)
+        return localizationService.string(key, volumePercent)
     }
 
     private func statusSymbolImage(presentation: StatusItemPresentation) -> NSImage {

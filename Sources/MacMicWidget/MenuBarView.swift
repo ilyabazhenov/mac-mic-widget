@@ -60,9 +60,9 @@ enum MenuBarTab: String, CaseIterable, Identifiable {
     var preferredPopoverHeight: CGFloat {
         switch self {
         case .microphone:
-            return 360
+            return 340
         case .settings:
-            return 540
+            return 590
         }
     }
 }
@@ -72,6 +72,7 @@ struct MenuBarView: View {
     @ObservedObject var launchAtLoginService: LaunchAtLoginService
     @ObservedObject var globalHotkeyService: GlobalHotkeyService
     @ObservedObject var visualFeedbackService: VisualFeedbackService
+    @ObservedObject var statusItemClickBehaviorService: StatusItemClickBehaviorService
     @ObservedObject var localizationService: LocalizationService
     @ObservedObject var audioFeedbackService: AudioFeedbackService
     @ObservedObject var holdToUnmuteService: HoldToUnmuteService
@@ -203,6 +204,20 @@ struct MenuBarView: View {
         )
     }
 
+    private var statusItemClickBehaviorBinding: Binding<StatusItemClickBehavior> {
+        Binding(
+            get: { statusItemClickBehaviorService.clickBehavior },
+            set: { statusItemClickBehaviorService.setClickBehavior($0) }
+        )
+    }
+
+    private var visualFeedbackScreenModeBinding: Binding<VisualFeedbackScreenMode> {
+        Binding(
+            get: { visualFeedbackService.screenMode },
+            set: { visualFeedbackService.setScreenMode($0) }
+        )
+    }
+
     private var volumePercent: Int {
         MenuBarPresentationLogic.volumePercent(from: microphoneService.inputVolume)
     }
@@ -249,36 +264,48 @@ struct MenuBarView: View {
 
     private var microphoneTabView: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack {
-                VStack(alignment: .leading, spacing: compactSpacing) {
+            // Hero card
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
                     Text(localizationService.string("menu.microphone"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(levelLabel)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(levelColor.opacity(0.18))
+                        .foregroundStyle(levelColor)
+                        .clipShape(Capsule())
+                        .animation(.easeInOut(duration: 0.3), value: levelColor)
+                }
+                HStack(alignment: .bottom) {
                     Text("\(volumePercent)%")
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                         .monospacedDigit()
+                    Spacer()
+                    LevelBarsView(
+                        level: microphoneService.inputVolume,
+                        isMuted: microphoneService.isMuted,
+                        color: levelColor
+                    )
+                    .padding(.bottom, 6)
                 }
-                Spacer()
-                Text(levelLabel)
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(levelColor.opacity(0.18))
-                    .foregroundStyle(levelColor)
-                    .clipShape(Capsule())
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(levelColor.opacity(0.07))
+                    .animation(.easeInOut(duration: 0.35), value: microphoneService.isMuted)
+            )
 
             VStack(alignment: .leading, spacing: contentSpacing) {
-                HStack {
-                    Text(localizationService.string("menu.input_level"))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(volumePercent)%")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
+                Text(localizationService.string("menu.input_level"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
                 Slider(
                     value: sliderBinding,
                     in: 0...1,
@@ -317,7 +344,9 @@ struct MenuBarView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .tint(microphoneService.isMuted ? .accentColor : .red)
+            .animation(.easeInOut(duration: 0.2), value: microphoneService.isMuted)
             .frame(maxWidth: .infinity)
             .keyboardShortcut(.space, modifiers: [])
 
@@ -333,6 +362,20 @@ struct MenuBarView: View {
     private var settingsTabView: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             Toggle(localizationService.string("menu.launch_at_login"), isOn: launchAtLoginBinding)
+
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                Text(localizationService.string("menu.left_click_section"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Picker("", selection: statusItemClickBehaviorBinding) {
+                    ForEach(StatusItemClickBehavior.allCases) { behavior in
+                        Text(localizationService.string(behavior.localizationKey)).tag(behavior)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             VStack(alignment: .leading, spacing: contentSpacing) {
                 Text(localizationService.string("menu.hotkey_section"))
@@ -389,6 +432,19 @@ struct MenuBarView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Toggle(localizationService.string("menu.show_visual_notifications"), isOn: visualFeedbackBinding)
+                VStack(alignment: .leading, spacing: compactSpacing) {
+                    Text(localizationService.string("menu.visual_notification_screen"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: visualFeedbackScreenModeBinding) {
+                        ForEach(VisualFeedbackScreenMode.allCases) { mode in
+                            Text(localizationService.string(mode.localizationKey)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .disabled(visualFeedbackService.isEnabled == false)
+                }
                 Toggle(localizationService.string("menu.play_sound_notifications"), isOn: soundFeedbackBinding)
                 VStack(alignment: .leading, spacing: compactSpacing) {
                     Text(localizationService.string("menu.sound_preset"))

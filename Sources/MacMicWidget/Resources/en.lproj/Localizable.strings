@@ -6,6 +6,9 @@
 "menu.tab_microphone" = "Microphone";
 "menu.tab_settings" = "Settings";
 "menu.launch_at_login" = "Launch at login";
+"menu.left_click_section" = "Left click";
+"menu.left_click_open_controls" = "Open controls";
+"menu.left_click_toggle_mute" = "Toggle mute";
 "menu.enable_global_hotkey" = "Enable global hotkey";
 "menu.enable_hold_to_unmute" = "Enable hold-to-unmute";
 "menu.hotkey_section" = "Hotkey";
@@ -15,6 +18,9 @@
 "menu.reset_default" = "Reset to default";
 "menu.feedback_section" = "Feedback";
 "menu.show_visual_notifications" = "Show visual notifications";
+"menu.visual_notification_screen" = "Show visual notifications on";
+"menu.visual_notification_screen_main" = "Main";
+"menu.visual_notification_screen_active" = "Active";
 "menu.play_sound_notifications" = "Play sound notifications";
 "menu.sound_volume" = "Sound volume";
 "menu.language_section" = "Language";
@@ -26,7 +32,7 @@
 "menu.unmute" = "Unmute";
 "menu.hotkey_disabled" = "Hotkey disabled";
 "menu.hotkey_active" = "Hotkey active";
-"menu.hotkey_unavailable" = "Hotkey unavailable (conflict)";
+"menu.hotkey_unavailable" = "Hotkey unavailable; shortcut may type into focused fields";
 
 "level.muted" = "Muted";
 "level.low" = "Low";
@@ -35,6 +41,10 @@
 
 "tooltip.muted" = "Microphone muted — Left: open panel · Right: unmute";
 "tooltip.active" = "Microphone %d%% — Left: open panel · Right: mute/unmute";
+"tooltip.muted.open_controls_on_left_click" = "Microphone muted — Click for controls. Right-click to unmute.";
+"tooltip.active.open_controls_on_left_click" = "Microphone %d%% — Click for controls. Right-click to mute/unmute.";
+"tooltip.muted.toggle_mute_on_left_click" = "Microphone muted — Click to unmute. Right-click for controls.";
+"tooltip.active.toggle_mute_on_left_click" = "Microphone %d%% — Click to mute/unmute. Right-click for controls.";
 
 "hud.off" = "Mic Off";
 "hud.on" = "Mic %d%%";
@@ -49,7 +59,7 @@
 
 "hotkey.error.add_modifier" = "Add at least one modifier key.";
 "hotkey.error.choose_non_modifier" = "Choose a non-modifier key.";
-"hotkey.error.unavailable" = "Hotkey unavailable (conflict).";
+"hotkey.error.unavailable" = "Hotkey unavailable (conflict). If it is not registered, macOS may pass the shortcut to the active text field.";
 
 "menu.sound_preset" = "Sound preset";
 "menu.sound_preset_soft_balanced" = "Soft balanced";

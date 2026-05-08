@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+## v0.1.15
+
+- Replaced the bundled app icon with a new light system-style microphone and input-level meter design.
+- Added a generated source icon and rebuild script for regenerating the PNG iconset and `AppIcon.icns`.
+- Refined the menu bar status item to use native template rendering without muted tint and improved visual-level mapping.
+
 ## v0.1.9
 
 - Added GitHub Actions CI workflow that runs tests and coverage checks on each push and pull request to improve release confidence.
@@ -8,8 +16,8 @@
 
 ## v0.1.8
 
-- Changed the default global hotkey to `Shift + Option + Z` for quicker one-hand access and fewer conflicts with common app shortcuts.
-- Added a regression test that locks the default hotkey display string to `⌥⇧Z`.
+- Changed the default global hotkey to `Control + Option + M` to reduce accidental text input when registration is unavailable.
+- Added regression tests for the default hotkey display and legacy-default migration.
 - Updated README behavior notes to document the new default global hotkey.
 
 ## v0.1.7

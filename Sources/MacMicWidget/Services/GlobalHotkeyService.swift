@@ -7,6 +7,11 @@ struct HotkeyConfiguration: Codable, Equatable {
     var modifiers: UInt32
 
     static let `default` = HotkeyConfiguration(
+        keyCode: UInt32(kVK_ANSI_M),
+        modifiers: GlobalHotkeyService.carbonFlags(from: [.control, .option])
+    )
+
+    static let legacyDefault = HotkeyConfiguration(
         keyCode: UInt32(kVK_ANSI_Z),
         modifiers: GlobalHotkeyService.carbonFlags(from: [.option, .shift])
     )
@@ -27,6 +32,7 @@ final class GlobalHotkeyService: ObservableObject {
     private let defaults: UserDefaults
     private let toggleHandler: () -> Void
     private let eventHandler: ((GlobalHotkeyEvent) -> Void)?
+    private let diagnostics: ((String) -> Void)?
     private var configuration: HotkeyConfiguration
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
@@ -39,21 +45,33 @@ final class GlobalHotkeyService: ObservableObject {
     init(
         defaults: UserDefaults = .standard,
         toggleHandler: @escaping () -> Void,
-        eventHandler: ((GlobalHotkeyEvent) -> Void)? = nil
+        eventHandler: ((GlobalHotkeyEvent) -> Void)? = nil,
+        diagnostics: ((String) -> Void)? = nil
     ) {
         self.defaults = defaults
         self.toggleHandler = toggleHandler
         self.eventHandler = eventHandler
+        self.diagnostics = diagnostics
         self.isEnabled = defaults.object(forKey: Self.enabledKey) as? Bool ?? false
+        var shouldPersistMigratedConfiguration = false
         if
             let data = defaults.data(forKey: Self.configurationKey),
             let saved = try? JSONDecoder().decode(HotkeyConfiguration.self, from: data)
         {
-            self.configuration = saved
+            if saved == .legacyDefault {
+                self.configuration = .default
+                shouldPersistMigratedConfiguration = true
+            } else {
+                self.configuration = saved
+            }
         } else {
             self.configuration = .default
         }
         self.hotkeyDisplay = Self.displayString(for: configuration)
+        if shouldPersistMigratedConfiguration {
+            persistConfiguration()
+            diagnostics?("migrated legacy default hotkey to \(hotkeyDisplay)")
+        }
     }
 
     deinit {
@@ -65,6 +83,7 @@ final class GlobalHotkeyService: ObservableObject {
     }
 
     func start() {
+        diagnostics?("start called, enabled=\(isEnabled), display=\(hotkeyDisplay)")
         installEventHandlerIfNeeded()
         if isEnabled {
             registerCurrentHotkey()
@@ -78,6 +97,7 @@ final class GlobalHotkeyService: ObservableObject {
         if enabled {
             registerCurrentHotkey()
         } else {
+            diagnostics?("disabled, unregistering hotkey")
             unregister()
             isHotkeyActive = false
         }
@@ -143,7 +163,7 @@ final class GlobalHotkeyService: ObservableObject {
             hotkeyDisplay = Self.displayString(for: oldConfiguration)
             persistConfiguration()
             registerCurrentHotkey()
-            lastError = "Hotkey unavailable (conflict)."
+            lastError = Self.unavailableError
             return
         }
     }
@@ -157,6 +177,7 @@ final class GlobalHotkeyService: ObservableObject {
     private func registerCurrentHotkey() {
         unregister()
         installEventHandlerIfNeeded()
+        diagnostics?("registering \(hotkeyDisplay), keyCode=\(configuration.keyCode), modifiers=\(configuration.modifiers)")
         let status = RegisterEventHotKey(
             configuration.keyCode,
             configuration.modifiers,
@@ -168,9 +189,11 @@ final class GlobalHotkeyService: ObservableObject {
         if status == noErr {
             isHotkeyActive = true
             lastError = nil
+            diagnostics?("registration succeeded, active=\(isHotkeyActive)")
         } else {
             isHotkeyActive = false
-            lastError = "Hotkey unavailable (conflict)."
+            lastError = Self.unavailableError
+            diagnostics?("registration failed, status=\(status), active=\(isHotkeyActive)")
         }
     }
 
@@ -237,6 +260,7 @@ final class GlobalHotkeyService: ObservableObject {
             return noErr
         }
 
+        diagnostics?("event received: \(mappedEvent)")
         if let eventHandler {
             eventHandler(mappedEvent)
         } else if mappedEvent == .pressed {
@@ -279,6 +303,8 @@ final class GlobalHotkeyService: ObservableObject {
         }
         return nil
     }
+
+    private static let unavailableError = "Hotkey unavailable (conflict). If it is not registered, macOS may pass the shortcut to the active text field."
 
     private static func keyDisplayName(for keyCode: UInt32) -> String {
         let map: [UInt32: String] = [

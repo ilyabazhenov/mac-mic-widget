@@ -14,6 +14,6 @@ func menuBarTabLocalizationKeysAreStable() {
 
 @Test
 func menuBarTabPreferredPopoverHeightsAreStable() {
-    #expect(MenuBarTab.microphone.preferredPopoverHeight == 360)
-    #expect(MenuBarTab.settings.preferredPopoverHeight == 540)
+    #expect(MenuBarTab.microphone.preferredPopoverHeight == 340)
+    #expect(MenuBarTab.settings.preferredPopoverHeight == 590)
 }

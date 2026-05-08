@@ -1,4 +1,4 @@
-.PHONY: run dev test coverage build clean deps
+.PHONY: run dev test coverage build clean deps app-icon
 
 APP := MacMicWidget
 SWIFT := swift
@@ -24,3 +24,6 @@ clean:
 
 deps:
 	$(SWIFT) package resolve
+
+app-icon:
+	bash scripts/generate_app_icon.sh

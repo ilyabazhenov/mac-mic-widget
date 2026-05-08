@@ -306,6 +306,104 @@ func visualFeedbackDefaultsToEnabledAndPersistsUpdates() {
 
 @MainActor
 @Test
+func visualFeedbackScreenModeDefaultsToMainAndPersistsUpdates() {
+    let suiteName = "visualFeedbackScreenModeDefaultsToMainAndPersistsUpdates"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defaults.removePersistentDomain(forName: suiteName)
+
+    let service = VisualFeedbackService(defaults: defaults)
+    #expect(service.screenMode == .main)
+
+    service.setScreenMode(.active)
+    #expect(service.screenMode == .active)
+
+    let restored = VisualFeedbackService(defaults: defaults)
+    #expect(restored.screenMode == .active)
+}
+
+@Test
+func floatingHUDScreenSelectionUsesMainScreenByDefault() {
+    let main = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 0, y: 0, width: 1440, height: 900),
+        visibleFrame: NSRect(x: 0, y: 24, width: 1440, height: 876)
+    )
+    let secondary = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 1440, y: 0, width: 1200, height: 800),
+        visibleFrame: NSRect(x: 1440, y: 0, width: 1200, height: 800)
+    )
+
+    let selected = FloatingHUDScreenSelectionLogic.visibleFrame(
+        for: .main,
+        screens: [main, secondary],
+        mainScreen: main,
+        mouseLocation: NSPoint(x: 1800, y: 400)
+    )
+
+    #expect(selected == main.visibleFrame)
+}
+
+@Test
+func floatingHUDScreenSelectionUsesBuiltInScreenForMainMode() {
+    let externalMain = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 0, y: 0, width: 2560, height: 1440),
+        visibleFrame: NSRect(x: 0, y: 24, width: 2560, height: 1416)
+    )
+    let builtIn = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 2560, y: 0, width: 1440, height: 900),
+        visibleFrame: NSRect(x: 2560, y: 0, width: 1440, height: 900),
+        isBuiltIn: true
+    )
+
+    let selected = FloatingHUDScreenSelectionLogic.visibleFrame(
+        for: .main,
+        screens: [externalMain, builtIn],
+        mainScreen: externalMain,
+        mouseLocation: NSPoint(x: 500, y: 500)
+    )
+
+    #expect(selected == builtIn.visibleFrame)
+}
+
+@Test
+func floatingHUDScreenSelectionUsesScreenUnderMouseWhenActive() {
+    let main = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 0, y: 0, width: 1440, height: 900),
+        visibleFrame: NSRect(x: 0, y: 24, width: 1440, height: 876)
+    )
+    let secondary = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 1440, y: 0, width: 1200, height: 800),
+        visibleFrame: NSRect(x: 1440, y: 0, width: 1200, height: 800)
+    )
+
+    let selected = FloatingHUDScreenSelectionLogic.visibleFrame(
+        for: .active,
+        screens: [main, secondary],
+        mainScreen: main,
+        mouseLocation: NSPoint(x: 1800, y: 400)
+    )
+
+    #expect(selected == secondary.visibleFrame)
+}
+
+@Test
+func floatingHUDScreenSelectionFallsBackToMainWhenActiveScreenIsUnknown() {
+    let main = FloatingHUDScreenGeometry(
+        frame: NSRect(x: 0, y: 0, width: 1440, height: 900),
+        visibleFrame: NSRect(x: 0, y: 24, width: 1440, height: 876)
+    )
+
+    let selected = FloatingHUDScreenSelectionLogic.visibleFrame(
+        for: .active,
+        screens: [main],
+        mainScreen: main,
+        mouseLocation: NSPoint(x: 4000, y: 4000)
+    )
+
+    #expect(selected == main.visibleFrame)
+}
+
+@MainActor
+@Test
 func localizationServicePersistsLanguageAndReturnsLocalizedStrings() {
     let suiteName = "localizationServicePersistsLanguageAndReturnsLocalizedStrings"
     let defaults = UserDefaults(suiteName: suiteName)!
