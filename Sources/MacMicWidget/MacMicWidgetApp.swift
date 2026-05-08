@@ -347,14 +347,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isMuted: microphoneService.isMuted,
             inputVolume: microphoneService.inputVolume
         )
-        let base = statusSymbolImage(presentation: presentation)
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        let image = (base.withSymbolConfiguration(sizeConfig) ?? base)
-        image.isTemplate = true
-
-        button.image = image
-        button.title = ""
-        button.imagePosition = .imageOnly
+        if let image = statusSymbolImage(presentation: presentation) {
+            let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+            let configuredImage = (image.withSymbolConfiguration(sizeConfig) ?? image)
+            configuredImage.isTemplate = true
+            button.image = configuredImage
+            button.title = ""
+            button.imagePosition = .imageOnly
+        } else {
+            // Text fallback keeps the status item visible if SF Symbol rendering fails at runtime.
+            button.image = nil
+            button.title = "Mic"
+            button.imagePosition = .noImage
+        }
         button.contentTintColor = nil
         button.toolTip = statusItemToolTip
     }
@@ -383,7 +388,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return localizationService.string(key, volumePercent)
     }
 
-    private func statusSymbolImage(presentation: StatusItemPresentation) -> NSImage {
+    private func statusSymbolImage(presentation: StatusItemPresentation) -> NSImage? {
         if let variableImage = NSImage(
             systemSymbolName: presentation.symbolName,
             variableValue: presentation.variableValue,
@@ -418,7 +423,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return NSImage(
             systemSymbolName: "mic.fill",
             accessibilityDescription: "Microphone"
-        ) ?? NSImage()
+        )
     }
 
 }

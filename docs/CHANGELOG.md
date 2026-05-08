@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.1.16
+
+- Added a status item title fallback (`Mic`) to keep the menu bar control visible when SF Symbol rendering fails.
+
 ## v0.1.15
 
 - Replaced the bundled app icon with a new light system-style microphone and input-level meter design.
