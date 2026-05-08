@@ -85,6 +85,26 @@ EOF
 echo "==> Skipping ad-hoc bundle signing for unsigned distribution"
 echo "    (SPM resource bundle is intentionally placed at app root for Bundle.module lookup)."
 
+echo "==> Running startup smoke-check for bundled app"
+SMOKE_PID=""
+cleanup_smoke() {
+  if [[ -n "$SMOKE_PID" ]] && kill -0 "$SMOKE_PID" 2>/dev/null; then
+    kill "$SMOKE_PID" 2>/dev/null || true
+    wait "$SMOKE_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup_smoke EXIT
+MMW_SAFE_MODE=1 "$MACOS_DIR/$APP_NAME" >/dev/null 2>&1 &
+SMOKE_PID=$!
+sleep 1
+if ! kill -0 "$SMOKE_PID" 2>/dev/null; then
+  echo "ERROR: bundled app failed startup smoke-check"
+  wait "$SMOKE_PID" || true
+  exit 1
+fi
+cleanup_smoke
+trap - EXIT
+
 echo "==> Creating distributable zip"
 (
   cd "$DIST_DIR"

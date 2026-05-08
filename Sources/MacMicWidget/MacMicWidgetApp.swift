@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
     private let popoverWidth: CGFloat = 340
     private let startupLog = StartupLog()
+    private var isUsingStatusItemTextFallback = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         startupLog.write("applicationDidFinishLaunching entered")
@@ -347,18 +348,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isMuted: microphoneService.isMuted,
             inputVolume: microphoneService.inputVolume
         )
-        if let image = statusSymbolImage(presentation: presentation) {
+        if let image = statusSymbolImage(presentation: presentation), image.isRenderableStatusSymbol {
             let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
             let configuredImage = (image.withSymbolConfiguration(sizeConfig) ?? image)
             configuredImage.isTemplate = true
             button.image = configuredImage
             button.title = ""
             button.imagePosition = .imageOnly
+            statusItem?.length = NSStatusItem.squareLength
+            if isUsingStatusItemTextFallback {
+                startupLog.write("status item icon rendering restored, switching to icon mode")
+            }
+            isUsingStatusItemTextFallback = false
         } else {
             // Text fallback keeps the status item visible if SF Symbol rendering fails at runtime.
             button.image = nil
             button.title = "Mic"
             button.imagePosition = .noImage
+            statusItem?.length = NSStatusItem.variableLength
+            if isUsingStatusItemTextFallback == false {
+                startupLog.write("status item icon unavailable, switching to text fallback")
+            }
+            isUsingStatusItemTextFallback = true
         }
         button.contentTintColor = nil
         button.toolTip = statusItemToolTip
@@ -426,6 +437,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+}
+
+private extension NSImage {
+    var isRenderableStatusSymbol: Bool {
+        isValid && size.width > 0 && size.height > 0
+    }
 }
 
 private struct StartupLog {

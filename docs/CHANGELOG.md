@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## v0.1.17
+
+- Hardened status item fallback by switching to a visible text label (`Mic`) with variable status item width when icon rendering is invalid.
+- Added a release packaging smoke-check that starts the bundled app executable in safe mode and verifies startup before publishing artifacts.
+
 ## v0.1.16
 
 - Added a status item title fallback (`Mic`) to keep the menu bar control visible when SF Symbol rendering fails.
